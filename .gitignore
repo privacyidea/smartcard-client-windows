@@ -1,0 +1,11 @@
+.vs/
+PISmartcardClient/bin/
+PISmartcardClient/obj/
+PIVBase/bin/
+PIVBase/obj/
+PrivacyIDEA/bin/
+PrivacyIDEA/obj/
+YubiKeyPIV/bin/
+YubiKeyPIV/obj/
+Tests/bin
+Tests/obj

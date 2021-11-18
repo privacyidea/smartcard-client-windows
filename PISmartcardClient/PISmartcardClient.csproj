@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  <Nullable>enable</Nullable>
+  <LangVersion>default</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>pi.ico</ApplicationIcon>
+    <StartupObject></StartupObject>
+    <AssemblyName>PISmartcardClient</AssemblyName>
+    <RootNamespace>PISmartcardClient</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Windows\settingsCog.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LoadingSpinner.WPF" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0-rc.1.21451.13" />
+    <PackageReference Include="Microsoft.Toolkit.Mvvm" Version="7.1.0-rc2" />
+    <PackageReference Include="System.Management" Version="5.0.0" />
+    <PackageReference Include="Yubico.YubiKey" Version="1.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PIVBase\PIVBase.csproj" />
+    <ProjectReference Include="..\PrivacyIDEA\PrivacyIDEASDK.csproj" />
+    <ProjectReference Include="..\YubiKeyPIV\YubiKeyPIV.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Windows\settingsCog.png" />
+  </ItemGroup>
+
+</Project>

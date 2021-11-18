@@ -1,0 +1,44 @@
+﻿<Window x:Class="PISmartcardClient.Windows.EnrollentForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:PISmartcardClient.ViewModels"
+        d:DataContext="{d:DesignInstance Type=viewmodels:EnrollmentFormVM}"
+        mc:Ignorable="d"
+        x:Name="EnrollmentForm"
+        Style="{StaticResource PromptWindow}"
+        WindowStartupLocation="CenterOwner" 
+        Height="235" Width="356">
+
+    <Window.InputBindings>
+        <KeyBinding Command="{Binding OK}" CommandParameter="{Binding ElementName=EnrollmentForm}" Key="Enter"/>
+        <KeyBinding Command="{Binding Cancel}" CommandParameter="{Binding ElementName=EnrollmentForm}" Key="Esc"/>
+    </Window.InputBindings>
+
+    <Grid>
+        <Label Content="Subject Name" Style="{StaticResource PromptLabel}" 
+               HorizontalAlignment="Center" Margin="0,20,0,0" VerticalAlignment="Top"/>
+
+        <TextBox Text="{Binding SubjectName}" Name="InputSubjectName" Style="{StaticResource PromptTextBox}"
+                 HorizontalAlignment="Center" Margin="0,56,0,0" VerticalAlignment="Top" Width="256"/>
+
+        <ComboBox ItemsSource="{Binding Algorithms}" SelectedItem="{Binding SelectedAlgorithm}" SelectedIndex="0"
+                  HorizontalAlignment="Center" VerticalAlignment="Top"  Margin="0,136,0,0"
+                  Width="120" Height="27"
+                  FontSize="16" FontWeight="DemiBold"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+        <Label Content="Algorithm" Style="{StaticResource PromptLabel}"
+               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <Button Content="OK" Command="{Binding OK}" CommandParameter="{Binding ElementName=EnrollmentForm}"
+                HorizontalAlignment="Right" Margin="0,187,35,0" VerticalAlignment="Top" 
+                Style="{StaticResource PromptButton}"/>
+
+        <Button Content="Cancel" Command="{Binding Cancel}" CommandParameter="{Binding ElementName=EnrollmentForm}"
+                HorizontalAlignment="Left" Margin="35,187,0,0" VerticalAlignment="Top" 
+                Style="{StaticResource PromptButton}"/>
+    </Grid>
+
+</Window>

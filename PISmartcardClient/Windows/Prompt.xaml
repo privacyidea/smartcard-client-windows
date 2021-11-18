@@ -1,0 +1,33 @@
+﻿<Window x:Class="PISmartcardClient.Windows.Prompt"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:PISmartcardClient.ViewModels"
+        mc:Ignorable="d"
+        Style="{StaticResource PromptWindow}"
+        Title="{Binding Title}"
+        Height="200" Width="450"
+        d:DataContext="{d:DesignInstance Type=viewmodels:PromptVM}"
+        x:Name="PromptWindow"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.InputBindings>
+        <KeyBinding Command="{Binding OnClick}" CommandParameter="{Binding ElementName=PromptWindow}" Key="Enter"/>
+    </Window.InputBindings>
+
+    <Grid>
+        <Button Content="{Binding ButtonText}" Command="{Binding OnClick}" CommandParameter="{Binding ElementName=PromptWindow}"
+                Style="{StaticResource PromptButton}"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,15"/>
+
+        <TextBox Text="{Binding Input}" Height="25" Width="350" Margin="0,0,0,10"
+                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                 FontSize="16" FontWeight="DemiBold"
+                 VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+        <Label Content="{Binding Message}" Style="{StaticResource PromptLabel}"
+               HorizontalAlignment="Center" VerticalAlignment="Top"
+               Width="auto" Margin="0,35,0,0"/>
+    </Grid>
+</Window>

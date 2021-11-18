@@ -1,0 +1,44 @@
+﻿<Window x:Class="PISmartcardClient.Windows.YKMgmtKeyPrompt"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PISmartcardClient"
+        xmlns:viewmodels="clr-namespace:PISmartcardClient.ViewModels"
+        mc:Ignorable="d"
+        Style="{StaticResource PromptWindow}"
+        x:Name="YKMgmtKeyPromptWindow"
+        d:DataContext="{d:DesignInstance Type=viewmodels:YKMgmtKeyPromptVM}"
+        Title="Management Key Required" 
+        Height="220" Width="540" 
+        WindowStartupLocation="CenterOwner" SizeToContent="Manual">
+
+    <Window.InputBindings>
+        <KeyBinding Command="{Binding OK}" CommandParameter="{Binding ElementName=YKMgmtKeyPromptWindow}" Key="Enter"/>
+        <KeyBinding Command="{Binding Cancel}" CommandParameter="{Binding ElementName=YKMgmtKeyPromptWindow}" Key="Esc"/>
+    </Window.InputBindings>
+
+    <Grid>
+        <Label Content="Please enter your management key" Style="{StaticResource PromptLabel}"
+               Margin="0,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" 
+               Height="auto" Width="auto"/>
+
+        <TextBox Text="{Binding Input, Mode=TwoWay}" IsEnabled="{Binding InputEnabled}"
+                 Style="{StaticResource PromptTextBox}"
+                 HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,30" Width="440"/>
+
+        <CheckBox Content="Use Default" FontSize="16" FontWeight="DemiBold"
+                  VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                  Command="{Binding CheckBoxCommand}" CommandParameter="{Binding IsChecked, RelativeSource={RelativeSource Self}, Mode=OneWay}" 
+                  HorizontalAlignment="Center" Margin="0,40,0,0" VerticalAlignment="Center" 
+                  RenderTransformOrigin="0.5,0.5" Height="auto" Width="auto"/>
+
+        <Button Content="OK" Style="{StaticResource PromptButton}"
+                Command="{Binding OK}" CommandParameter="{Binding ElementName=YKMgmtKeyPromptWindow}"
+                HorizontalAlignment="Left" Margin="355,156,0,0" VerticalAlignment="Top"/>
+
+        <Button Content="Cancel" Style="{StaticResource PromptButton}"
+                Command="{Binding Cancel}" CommandParameter="{Binding ElementName=YKMgmtKeyPromptWindow}"
+                HorizontalAlignment="Left" Margin="72,156,0,0" VerticalAlignment="Top"/>
+    </Grid>
+</Window>

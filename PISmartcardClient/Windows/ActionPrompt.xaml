@@ -1,0 +1,33 @@
+﻿<Window x:Class="PISmartcardClient.Windows.ActionPrompt"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:PISmartcardClient.ViewModels"
+        d:DataContext="{d:DesignInstance Type=viewmodels:ActionPromptVM}"
+        mc:Ignorable="d"
+        x:Name="ActionPromptWdw"
+        Style="{StaticResource PromptWindow}"
+        WindowStartupLocation="CenterOwner"
+        Title="ActionPrompt" Height="200" Width="400">
+
+    <Window.InputBindings>
+        <KeyBinding Command="{Binding BtnOK}" CommandParameter="{Binding ElementName=ActionPromptWdw}" Key="Enter"/>
+    </Window.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="{Binding Message}"
+               TextWrapping="Wrap" TextAlignment="Center" FontWeight="DemiBold" FontSize="16"
+               Width="360" Height="auto" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5"/>
+
+        <Button Grid.Row="1" Content="OK" Command="{Binding BtnOK}" CommandParameter="{Binding ElementName=ActionPromptWdw}"
+                VerticalAlignment="Center" HorizontalAlignment="Center"
+                Width="80" Height="30"/>
+
+    </Grid>
+</Window>
