@@ -1,67 +1,52 @@
-﻿using System.Configuration;
+﻿using Microsoft.Win32;
+using System;
+using static PIVBase.Utilities;
 
-namespace PISmartcardClient.Model
+namespace PISmartcardClient
 {
-    public sealed class SettingsService : ApplicationSettingsBase, ISettingsService
+    internal class SettingsService : ISettingsService
     {
-        [UserScopedSetting, DefaultSettingValue("")]
-        public string URL
+        private readonly string _RegistryPath = "SOFTWARE\\Netknights GmbH\\PrivacyIDEA Enrollment Tool";
+
+        public bool? GetBoolProperty(string name)
         {
-            get => (string)this[nameof(URL)];
-            set => this[nameof(URL)] = value;
+            var ret = ReadRegistryEntry(name) == "1";
+            Log($"Settings: Returning {ret} for {name}");
+            return ret;
         }
 
-        [UserScopedSetting, DefaultSettingValue("true")]
-        public bool SSLVerify
+        public string? GetStringProperty(string name)
         {
-            get => (bool)this[nameof(SSLVerify)];
-            set => this[nameof(SSLVerify)] = value;
+            var ret = ReadRegistryEntry(name);
+            Log($"Settings: Returning {ret} for {name}");
+            return ret;
         }
 
-        [UserScopedSetting, DefaultSettingValue("")]
-        public string ServiceUser
+        private string? ReadRegistryEntry(string name)
         {
-            get => (string)this[nameof(ServiceUser)];
-            set => this[nameof(ServiceUser)] = value;
-        }
-
-        [UserScopedSetting, DefaultSettingValue("")]
-        public string ServicePass
-        {
-            get => (string)this[nameof(ServicePass)];
-            set => this[nameof(ServicePass)] = value;
-        }
-
-        bool? ISettingsService.GetBoolProperty(string name)
-        {
-            return (bool)this[name];
-        }
-
-        string? ISettingsService.GetStringProperty(string name)
-        {
-            return (string)this[name];
-        }
-
-        void ISettingsService.RegisterSettingsChangedHandler(SettingChangingEventHandler handler)
-        {
-            SettingChanging += handler;
-        }
-        void ISettingsService.SetProperty(string name, string value)
-        {
-            if ((string)this[name] != value)
+            try
             {
-                this[name] = value;
-                Save();
-            }
-        }
+                using RegistryKey? key = Registry.LocalMachine.OpenSubKey(_RegistryPath);
+                if (key is not null)
+                {
+                    Object? o = key.GetValue(name);
+                    if (o is not null)
+                    {
+                        return o as string;
+                    }
+                    else
+                    {
+                        Log("object for key " + key + " is null.");
+                    }
 
-        void ISettingsService.SetProperty(string name, bool value)
-        {
-            if ((bool)this[name] != value)
-            {
-                this[name] = value;
-                Save();
+                }
             }
+            catch (Exception ex)
+            {
+                Log("Exception while trying to read registry value: " + ex.Message);
+            }
+
+            return null;
         }
     }
 }

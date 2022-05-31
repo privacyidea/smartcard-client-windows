@@ -33,7 +33,6 @@ namespace PISmartcardClient
             services.AddSingleton<IUIDispatcher, UIDispatcher>();
 
             // Singleton VMs
-            services.AddSingleton<SettingsVM>();
             services.AddSingleton<MainVM>();
 
             // Transient VMs

@@ -38,7 +38,6 @@ namespace Tests
 
             _SettingsServiceMock.Verify(m => m.GetStringProperty("url"), Times.Once);
             _SettingsServiceMock.Verify(m => m.GetBoolProperty("sslverify"), Times.Once);
-            _SettingsServiceMock.Verify(m => m.RegisterSettingsChangedHandler(It.IsAny<SettingChangingEventHandler>()));
         }
 
         [TestCleanup]

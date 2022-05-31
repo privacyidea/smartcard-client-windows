@@ -27,8 +27,6 @@ namespace PISmartcardClient
             _WindowService = windowService;
             _SettingsService = settingsService;
 
-            _SettingsService.RegisterSettingsChangedHandler(new SettingChangingEventHandler(SettingChanging));
-
             string? url = _SettingsService.GetStringProperty("url");
             if (url is not null)
             {
