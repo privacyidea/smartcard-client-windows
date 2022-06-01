@@ -10,15 +10,20 @@ namespace PISmartcardClient
 
         public bool? GetBoolProperty(string name)
         {
-            var ret = ReadRegistryEntry(name) == "1";
-            Log($"Settings: Returning {ret} for {name}");
-            return ret;
+            var val = ReadRegistryEntry(name);
+            Log($"Settings: Read {val} for {name}");
+            if (val is not null)
+            {
+                return val == "1";
+            }
+            
+            return null;
         }
 
         public string? GetStringProperty(string name)
         {
             var ret = ReadRegistryEntry(name);
-            Log($"Settings: Returning {ret} for {name}");
+            Log($"Settings: Read {ret} for {name}");
             return ret;
         }
 
