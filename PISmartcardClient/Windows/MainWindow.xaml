@@ -170,9 +170,6 @@
         <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="25,0,0,10"  Height="55" Width="55"
                 Command="{Binding BtnSettings}" Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                 Style="{StaticResource DisabledBackgroud}">
-            <StackPanel>
-                <Image Source="/Windows/settingsCog.png"/>
-            </StackPanel>
         </Button>
 
         <!-- PRIVACYIDEA USER CONTROL -->

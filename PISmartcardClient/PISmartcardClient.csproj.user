@@ -22,9 +22,6 @@
     <Compile Update="Windows\PINWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Windows\SettingsWindow.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="Windows\YKMgmtKeyPrompt.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -67,9 +64,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Windows\PinWindow.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Windows\SettingsWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Windows\YKMgmtKeyPrompt.xaml">

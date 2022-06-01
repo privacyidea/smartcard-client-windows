@@ -60,11 +60,6 @@ namespace PISmartcardClient
             return (true, formVM.SubjectName, formVM.SelectedAlgorithm);
         }
 
-        void IWindowService.Settings()
-        {
-            ShowBlockingDialog(new SettingsWindow());
-        }
-
         (bool success, string? user, string? secondInput) IWindowService.AuthenticationPrompt()
         {
             AuthInputWindow authWindow = new();

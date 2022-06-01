@@ -8,7 +8,6 @@ namespace PISmartcardClient
         public (bool success, string? input) SimplePrompt(string title, string message, string buttonText = "");
         public (bool success, string? managementKey) YubikeyMgmtKeyPrompt();
         public (bool success, string? subjectName, string? algorithm) EnrollmentForm();
-        public void Settings();
         public (bool success, string? user, string? secondInput) AuthenticationPrompt();
         public void ActionPrompt(string message, Action? action);
         public string? SaveFileDialog(string? filter);

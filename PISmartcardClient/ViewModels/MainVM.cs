@@ -187,8 +187,6 @@ namespace PISmartcardClient.ViewModels
                     && CurrentSlot is not PIVSlot.None
                     && !string.IsNullOrEmpty(_CurrentSlotData.ExpirationDate));
 
-            BtnSettings = new((_) => _WindowService.Settings());
-
             BtnChangeUser = new(async (_) => await LoginLogout());
 
             BtnComplete = new(async (_) =>
