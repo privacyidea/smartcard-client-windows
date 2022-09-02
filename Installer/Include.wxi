@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Include>
+	<?define Publisher = "Netknights GmbH" ?>
+	<?define ProductName = "privacyIDEA Smartcard Client" ?>
+	<?define AppURLInfoAbout = "https://www.netknights.it" ?>
+	<?define Version = !(bind.fileVersion.PISmartcardClient.exe) ?>
+</Include>

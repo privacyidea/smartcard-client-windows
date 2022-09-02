@@ -47,7 +47,7 @@ namespace PISmartcardClient
             return (true, vm.Input);
         }
 
-        (bool, string?, string?) IWindowService.EnrollmentForm()
+        (bool, string?) IWindowService.EnrollmentForm()
         {
             EnrollentForm form = new();
             EnrollmentFormVM formVM = (EnrollmentFormVM)form.DataContext;
@@ -55,9 +55,9 @@ namespace PISmartcardClient
             if (formVM.Cancelled)
             {
                 Log("EnrollmentForm cancelled.");
-                return (false, null, null);
+                return (false, null);
             }
-            return (true, formVM.SubjectName, formVM.SelectedAlgorithm);
+            return (true, formVM.SelectedAlgorithm);
         }
 
         (bool success, string? user, string? secondInput) IWindowService.AuthenticationPrompt()
@@ -65,7 +65,6 @@ namespace PISmartcardClient
             AuthInputWindow authWindow = new();
             AuthVM authVM = (AuthVM)authWindow.DataContext;
 
-            // TODO check for empty inputs?
             ShowBlockingDialog(authWindow);
 
             if (authVM.Cancelled)
@@ -77,23 +76,36 @@ namespace PISmartcardClient
             return (true, authVM.UsernameInput, authVM.PasswordInput);
         }
 
-        void IWindowService.ActionPrompt(string message, Action? action)
+        bool IWindowService.ConfirmationPrompt(string message, bool showCancel)
         {
-            ActionPrompt ap = new();
-            ActionPromptVM apVM = (ActionPromptVM)ap.DataContext;
-            apVM.Action = action;
+            ConfirmationPrompt ap = new();
+            ConfirmationPromptVM apVM = (ConfirmationPromptVM)ap.DataContext;
             apVM.Message = message;
+            apVM.ShowCancel = showCancel;
             ShowBlockingDialog(ap);
+            return !apVM.Cancelled;
         }
 
         private void ShowBlockingDialog<T>(T t) where T : Window
         {
             Application.Current.MainWindow.IsEnabled = false;
-            t.ShowDialog();
+            try
+            {
+                t.ShowDialog();
+            }
+            catch (InvalidOperationException e)
+            {
+                Error(e);
+            }
+            finally
+            {
+                t.Close();
+            }
+
             Application.Current.MainWindow.IsEnabled = true;
         }
 
-        string? IWindowService.SaveFileDialog(string? filter)
+        string? IWindowService.SaveFileDialog(string? filter, string defaultFileName)
         {
             SaveFileDialog saveFileDialog = new();
             if (!string.IsNullOrEmpty(filter))
@@ -101,10 +113,15 @@ namespace PISmartcardClient
                 saveFileDialog.Filter = filter;
             }
 
+            if (!string.IsNullOrEmpty(defaultFileName))
+            {
+                saveFileDialog.FileName = defaultFileName;
+            }
+
             bool? diagSuccess = saveFileDialog.ShowDialog();
             if (diagSuccess.HasValue && !diagSuccess.Value)
             {
-                Log("SaveFileDialog failed!");
+                Log("SaveFileDialog cancelled");
                 return null;
             }
 
@@ -164,6 +181,12 @@ namespace PISmartcardClient
             ShowBlockingDialog(pinWindow);
 
             return (!vm.Cancelled, vm.Pin1, vm.Pin2);
+        }
+
+        public void Settings()
+        {
+            SettingsWindow settings = new();
+            ShowBlockingDialog(settings);
         }
     }
 }

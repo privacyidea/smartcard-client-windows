@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Fragment>
+		<UI>
+			<TextStyle Id="Tahoma_Bold" FaceName="Tahoma" Size="8" Bold="yes" />
+			<!-- PAGE 1-->
+			<Dialog Id="ConfigurationDlg" Width="370" Height="270" Title="[ProductName] Setup" NoMinimize="yes">
+				<Control Type="Edit" Id="in_url" Width="143" Height="16" X="94" Y="65" Text="https://..." Property="URL" Help="Server URL including scheme and path." />
+				<Control Type="CheckBox" Id="cbox_ssl" Width="123" Height="15" X="38" Y="90" Text="Disable SSL verification" CheckBoxValue="1" Property="DISABLESSL" />
+				<Control Type="CheckBox" Id="cbox_debug_log" Width="123" Height="15" X="38" Y="112" Text="Enable debug log" CheckBoxValue="1" Property="DEBUGLOG" />
+				<Control Type="Text" Id="LabelURL" Width="50" Height="17" X="38" Y="68">
+					<Text>Server URL</Text>
+				</Control>
+				<!-- Bottom Controls -->
+				<Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back">
+				</Control>
+				<Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="&amp;Next">
+					<Publish Event="NewDialog" Value="VerifyReadyDlg">URL</Publish>
+					<Publish Event="SpawnDialog" Value="NoServerURLMessageDlg">URL=""</Publish>
+				</Control>
+				<Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+					<Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+				</Control>
+				<Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+				<Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
+					<Text>Set the server URL and other properties.</Text>
+				</Control>
+				<Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+				<Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+					<Text>{\WixUI_Font_Title}Configuration</Text>
+				</Control>
+				<Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="2" />
+			</Dialog>
+			<!-- NO SERVER URL ENTERED ERROR DIALOG -->
+			<Dialog Id="NoServerURLMessageDlg" Width="260" Height="85" Title="[ProductName] Setup" NoMinimize="yes">
+				<Control Id="Return" Type="PushButton" X="100" Y="57" Width="56" Height="17" Default="yes" Cancel="yes" Text="&amp;Return">
+					<Publish Event="EndDialog" Value="Return">1</Publish>
+				</Control>
+				<Control Id="Text" Type="Text" X="48" Y="15" Width="194" Height="30" TabSkip="no">
+					<Text>
+						The Server URL is mandatory!
+					</Text>
+				</Control>
+			</Dialog>
+		</UI>
+	</Fragment>
+</Wix>

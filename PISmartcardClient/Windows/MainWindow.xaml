@@ -18,7 +18,7 @@
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="11*"/>
+            <RowDefinition Height="17*"/>
             <RowDefinition Height="2*"/>
         </Grid.RowDefinitions>
 
@@ -32,7 +32,7 @@
         </Rectangle>
 
         <!-- LEFT SIDE MENU -->
-        <ListBox x:Name="ListBox" Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" Margin="0,165,10,0"
+        <ListBox x:Name="ListBox" Grid.Column="0" VerticalAlignment="Center" Margin="0,40,10,0"
                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Center"
                  Style="{StaticResource ListBoxStyle}"
                  BorderBrush="{x:Null}" Height="auto" Width="auto">
@@ -92,9 +92,9 @@
 
         <!-- CENTER INFO GRID -->
         <Grid Grid.Column="1" Name="CenterGrid"
-              VerticalAlignment="Top" HorizontalAlignment="Left" 
-              Height="224" Width="538"
-              Margin="165,165,0,0" Visibility="{Binding ShowCenterControls, Converter={StaticResource BoolToVis}}">
+              VerticalAlignment="Top" HorizontalAlignment="Center" 
+              Height="253" Width="534"
+              Margin="0,150,0,0" Visibility="{Binding ShowCenterGrid, Converter={StaticResource BoolToVis}}">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
@@ -106,33 +106,51 @@
                 <RowDefinition Height="1*" />
                 <RowDefinition Height="1*" />
                 <RowDefinition Height="1*" />
+                <RowDefinition Height="1*" />
+                <RowDefinition Height="1*" />
+                <RowDefinition Height="1*" />
             </Grid.RowDefinitions>
 
-            <Label Grid.Column="0" Grid.Row="0" Content="Issuer:" 
+            <Label Grid.Column="0" Grid.Row="0" Content="Subject Name:"
                    Style="{StaticResource CertInfoLabel}" />
-            <Label Grid.Column="0" Grid.Row="1" Content="Subject Name:" 
+            <Label Grid.Column="0" Grid.Row="1" Content="Issuer:" 
                    Style="{StaticResource CertInfoLabel}" />
-            <Label Grid.Column="0" Grid.Row="2" Content="Expiration Date:"
+            <Label Grid.Column="0" Grid.Row="2" Content="Date of Issue:"
                    Style="{StaticResource CertInfoLabel}" />
-            <Label Grid.Column="0" Grid.Row="3" Content="Key Type:"
+            <Label Grid.Column="0" Grid.Row="3" Content="Date of Expiration:"
+                   Style="{StaticResource CertInfoLabel}" />
+            <Label Grid.Column="0" Grid.Row="4" Content="Serial Number:"
+                   Style="{StaticResource CertInfoLabel}" />
+            <Label Grid.Column="0" Grid.Row="5" Content="Thumbprint:"
+                   Style="{StaticResource CertInfoLabel}" />
+            <Label Grid.Column="0" Grid.Row="6" Content="Key Type:"
                    Style="{StaticResource CertInfoLabel}" />
 
             <Label Grid.Column="1" Grid.Row="0"
-                   Content="{Binding CurrentSlotData.Issuer}"
-                   Style="{StaticResource CertInfoValue}"/>
-            <Label Grid.Column="1" Grid.Row="1"
                    Content="{Binding CurrentSlotData.SubjectName}"
                    Style="{StaticResource CertInfoValue}"/>
+            <Label Grid.Column="1" Grid.Row="1"
+                   Content="{Binding CurrentSlotData.Issuer}"
+                   Style="{StaticResource CertInfoValue}"/>
             <Label Grid.Column="1" Grid.Row="2"
-                   Content="{Binding CurrentSlotData.ExpirationDate}"
+                   Content="{Binding CurrentSlotData.DateOfIssue}"
                    Style="{StaticResource CertInfoValue}"/>
             <Label Grid.Column="1" Grid.Row="3"
+                   Content="{Binding CurrentSlotData.ExpirationDate}"
+                   Style="{StaticResource CertInfoValue}"/>
+            <Label Grid.Column="1" Grid.Row="4"
+                   Content="{Binding CurrentSlotData.SerialNumber}"
+                   Style="{StaticResource CertInfoValue}"/>
+            <Label Grid.Column="1" Grid.Row="5"
+                   Content="{Binding CurrentSlotData.Thumbprint}"
+                   Style="{StaticResource CertInfoValue}"/>
+            <Label Grid.Column="1" Grid.Row="6"
                    Content="{Binding CurrentSlotData.KeyType}"
                    Style="{StaticResource CertInfoValue}"/>
         </Grid>
 
         <!-- CONTROLS BELOW CENTER GRID -->
-        <StackPanel Grid.Column="1" Grid.Row="0" HorizontalAlignment="Center" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,444,0,0">
+        <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,425,0,0">
             <StackPanel.Resources>
                 <Style TargetType="{x:Type Button}">
                     <Setter Property="Margin" Value="20,0,20,0"/>
@@ -141,85 +159,64 @@
 
             <Button Content="New"
                 Style="{StaticResource MainButton}" Visibility="{Binding ShowCreateBtn, Converter={StaticResource BoolToVis}}"
-                Command="{Binding BtnCreate}" Margin="0,0,70,0"/>
+                Command="{Binding BtnNew}" Margin="0,0,70,0"/>
 
             <Button Content="Export"
-                Style="{StaticResource MainButton}" Visibility="{Binding ShowCenterControls, Converter={StaticResource BoolToVis}}"
-                Command="{Binding BtnExport}" Margin="0,0,70,0"/>
-
-            <Button Content="Complete"
-                Command="{Binding BtnComplete}"
-                Style="{StaticResource MainButton}" Visibility="{Binding ShowCompleteBtn, Converter={StaticResource BoolToVis}}"/>
+                Style="{StaticResource MainButton}" Visibility="{Binding ShowCenterGrid, Converter={StaticResource BoolToVis}}"
+                Command="{Binding BtnExport}" Margin="0,0,0,0"/>
         </StackPanel>
 
-        <TextBlock Grid.Column="1" Grid.Row="0"
-                   Text="{Binding PendingRolloutText}" Visibility="{Binding ShowCompleteBtn, Converter={StaticResource BoolToVis}}"
-                   HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,154,64"
-                   TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Width="130"/>
+        <!-- PENDING CSR -->
+        <WrapPanel Grid.Column="1" Grid.Row="0" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,0"
+                    Orientation="Horizontal">
+            <Button Content="Check Status" Command="{Binding BtnCheckPending}" Margin="0,0,10,0"
+                Style="{StaticResource MainButton}" Visibility="{Binding ShowCheckPendingBtn, Converter={StaticResource BoolToVis}}" />
 
+            <TextBlock Grid.Column="1" Grid.Row="0"
+                   Text="{Binding PendingRolloutText}" Visibility="{Binding ShowCheckPendingBtn, Converter={StaticResource BoolToVis}}"
+                   TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Width="300"/>
+        </WrapPanel>
+        
         <TextBlock Text="{Binding Status}" Grid.Row="1" Grid.Column="1"
                    TextAlignment="Center" TextWrapping="Wrap"
-                   MaxWidth="700" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,26,0,0"
+                   MaxWidth="700" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"
                    FontSize="16" FontWeight="Bold">
             <!--<TextBlock.InputBindings>
                 <MouseBinding Command="{Binding BtnStatusClicked}" MouseAction="LeftClick" />
             </TextBlock.InputBindings>-->
         </TextBlock>
 
-        <!-- BOTTOM LEFT (SETTINGS, USER) -->
-        <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="25,0,0,10"  Height="55" Width="55"
+        <Button Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0"  Height="35" Width="35"
                 Command="{Binding BtnSettings}" Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
                 Style="{StaticResource DisabledBackgroud}">
+            <Image Source="settingsCog.png"></Image>
         </Button>
 
-        <!-- PRIVACYIDEA USER CONTROL -->
-        <ListBox Grid.Row="2" Grid.Column="0" Height="auto" Width="100" 
-                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-                 Background="Transparent" BorderBrush="Transparent"
-                 Style="{StaticResource ListBoxStyle}"
-                 Margin="0,0,20,12">
-
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="{x:Type ListBoxItem}">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                <Grid Background="{TemplateBinding Background}">
-                                    <ContentPresenter 
-                                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                                    Content="{TemplateBinding Content}"
-                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                    Margin="{TemplateBinding Padding}">
-                                    </ContentPresenter>
-                                </Grid>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListBox.ItemContainerStyle>
-
+        <!-- PRIVACYIDEA USER CONTROL BOTTOM LEFT -->
+        <WrapPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <!--Binding CurrentUserLabel}-->
             <Label Content="{Binding CurrentUserLabel}" 
                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                    FontWeight="Bold" FontSize="14"/>
-
-            <Button Content="{Binding LoginSwitchBtnText}" 
-                    Margin="0,0,0,0" Width="auto" Height="auto"
+            <!--Content="{Binding LoginSwitchBtnText}"-->
+            <Button 
+                    Content="{Binding LoginSwitchBtnText}" 
+                    Margin="15,0,0,0" Width="90" Height="auto"
                     Command="{Binding BtnChangeUser}"
                     Style="{StaticResource MainButton}"
-                    FontWeight="DemiBold" FontSize="18"/>
-        </ListBox>
-
+                    FontWeight="DemiBold" FontSize="16"/>
+        </WrapPanel>
+            
         <!-- DEVICE SELECTION CONTROLS -->
-        <ComboBox Grid.Column="1" Width="400" Height="35" Margin="165,48,0,0" Name="DevicesCB"
+        <ComboBox Grid.Column="1" Width="400" Height="35" Margin="0,23,0,0" Name="DevicesCB"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                  VerticalAlignment="Top" HorizontalAlignment="Left"
+                  VerticalAlignment="Top" HorizontalAlignment="Center"
                   FontWeight="Bold" FontSize="20"
                   ItemsSource="{Binding DeviceList}" SelectedIndex="0" SelectedValuePath="Description" DisplayMemberPath="Description"
                   SelectedItem="{Binding SelectedDevice}"/>
 
-        <StackPanel Grid.Column="1" HorizontalAlignment="Left" Orientation="Horizontal" VerticalAlignment="Top" 
-                    Height="35" Margin="168,88,0,0">
+        <StackPanel Grid.Column="1" HorizontalAlignment="Center" Orientation="Horizontal" VerticalAlignment="Top" 
+                    Height="35" Margin="0,63,0,0">
 
             <Button Content="Change PIN" Height="25" Width="105" Margin="0,0,40,0"
                     Command="{Binding BtnChangePIN}" Style="{StaticResource SmallMainButton}"/>

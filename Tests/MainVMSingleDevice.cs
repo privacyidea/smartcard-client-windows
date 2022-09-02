@@ -12,6 +12,7 @@ using System.Security.Cryptography;
 using Tests.TestUtils;
 using PISmartcardClient.Utilities;
 using System.Threading.Tasks;
+using PrivacyIDEAClient;
 
 namespace Tests
 {
@@ -53,23 +54,19 @@ namespace Tests
         [TestMethod]
         public void VerifyStartupState()
         {
-            _VM.BtnChangeMgmtKey.Should().NotBeNull();
             _VM.BtnChangePIN.Should().NotBeNull();
             _VM.BtnChangePUK.Should().NotBeNull();
             _VM.BtnChangeSlot.Should().NotBeNull();
             _VM.BtnChangeUser.Should().NotBeNull();
-            _VM.BtnComplete.Should().NotBeNull();
+            _VM.BtnCheckPending.Should().NotBeNull();
             _VM.BtnExport.Should().NotBeNull();
-            _VM.BtnCreate.Should().NotBeNull();
+            _VM.BtnNew.Should().NotBeNull();
             _VM.BtnReloadDevices.Should().NotBeNull();
-            _VM.BtnSettings.Should().NotBeNull();
 
-            _VM.ShowCenterControls.Should().BeFalse();
-            _VM.ShowCompleteBtn.Should().BeFalse();
+            _VM.ShowCenterGrid.Should().BeFalse();
+            _VM.ShowCheckPendingBtn.Should().BeFalse();
             _VM.ShowCreateBtn.Should().BeFalse();
             _VM.CurrentUserLabel.Should().Be("User: None");
-
-            _VM.BtnChangeMgmtKey.CanExecute(null).Should().BeTrue();
         }
 
         [TestMethod]
@@ -90,7 +87,7 @@ namespace Tests
             Thread.Sleep(500);
             _VM.CurrentSlotData.Should().NotBeNull();
             _VM.ShowCreateBtn.Should().BeTrue();
-            _VM.ShowCenterControls.Should().BeTrue();
+            _VM.ShowCenterGrid.Should().BeTrue();
             _WindowServiceMock.Verify(m => m.StartLoadingWindow(It.IsAny<string>()), Times.Once);
             _WindowServiceMock.Verify(m => m.StartLoadingWindow(It.IsAny<string>()), Times.Once);
         }
@@ -104,7 +101,7 @@ namespace Tests
             Thread.Sleep(500);
             _VM.CurrentSlotData.Should().BeNull();
             _VM.ShowCreateBtn.Should().BeTrue();
-            _VM.ShowCenterControls.Should().BeFalse();
+            _VM.ShowCenterGrid.Should().BeFalse();
             _VM.NoSlotOrCertText.Should().Be("There is currently no certificate in this slot.");
 
             _WindowServiceMock.Verify(m => m.StartLoadingWindow(It.IsAny<string>()), Times.Once);
@@ -121,10 +118,9 @@ namespace Tests
                                    .Returns("TestUser"); // Get user again for logout
             _PrivacyIDEAServiceMock.Setup(m => m.DoUserAuthentication()).ReturnsAsync(true);
 
-
-            List<PICertificateRequestData> list = new()
+            List<PIPendingCertificateRequest> list = new()
             {
-                new PICertificateRequestData(PIVSlot.Authentication, "123456", "TestUser", "CSRString", "AttestationString")
+                new PIPendingCertificateRequest(PIVSlot.Authentication,"deviceSerial", "deviceManufacturer", "TestUser", "tokenSerial", "CSRString")
             };
             _PersistenceServiceMock.Setup(m => m.LoadData("TestUser")).Returns(list);
 
@@ -139,7 +135,7 @@ namespace Tests
 
             // Verify the pending rollout is shown
             _VM.PendingRolloutText.Should().NotBeNullOrEmpty();
-            _VM.ShowCompleteBtn.Should().BeTrue();
+            _VM.ShowCheckPendingBtn.Should().BeTrue();
 
             // Logout
             _VM.BtnChangeUser.Execute(null);
@@ -152,7 +148,7 @@ namespace Tests
         [TestMethod]
         public void GenerateNewCertificate()
         {
-            _WindowServiceMock.Setup(m => m.EnrollmentForm()).Returns((true, "testSubject", "EccP256"));
+            _WindowServiceMock.Setup(m => m.EnrollmentForm()).Returns((true, "EccP256"));
 
             string strCertFromResponse = "-----BEGIN CERTIFICATE-----\n" +
                          "MIIDrzCCAZegAwIBAgICEBkwDQYJKoZIhvcNAQELBQAwDTELMAkGA1UEAxMCY2Ew" +
@@ -178,6 +174,10 @@ namespace Tests
                          "\n-----END CERTIFICATE-----";
 
             X509Certificate2 certFromResponse = CertUtil.ExtractCertificateFromResponse(strCertFromResponse);
+            PIResponse piResponse = new()
+            {
+                Certificate = strCertFromResponse
+            };
 
             _PIVDeviceMock.SetupSequence(m => m.GetCertificate(PIVSlot.Authentication))
                            .Returns((X509Certificate2)null) // when loading first time
@@ -198,7 +198,7 @@ namespace Tests
             _PrivacyIDEAServiceMock.Setup(m => m.CurrentUser()).Returns("TestUser");
             _PrivacyIDEAServiceMock.Setup(m => m.IsConfigured()).Returns(true);
             _PrivacyIDEAServiceMock.Setup(m => m.SendCSR(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                                   .Returns(Task.FromResult(strCertFromResponse));
+                                   .Returns(Task.FromResult(piResponse));
 
             // Select slot authentication which is currently empty
             _VM.BtnChangeSlot.Execute("Authentication");
@@ -206,10 +206,10 @@ namespace Tests
 
             // Generate a new certificate for the slot
             //_VM.CurrentSlot = PIVSlot.Authentication;
-            _VM.BtnCreate.Execute(null);
+            _VM.BtnNew.Execute(null);
             Thread.Sleep(1000);
 
-            _PersistenceServiceMock.Verify(m => m.SaveCSR(It.IsAny<PICertificateRequestData>()));
+            _PersistenceServiceMock.Verify(m => m.SaveCSR(It.IsAny<PIPendingCertificateRequest>()));
             _VM.CurrentSlotData.Should().NotBeNull();
         }
 

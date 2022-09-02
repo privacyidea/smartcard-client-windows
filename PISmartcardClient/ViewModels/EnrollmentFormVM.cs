@@ -16,13 +16,6 @@ namespace PISmartcardClient.ViewModels
             set => SetProperty(ref _SelectedAlgorithm, value);
         }
 
-        private string? _SubjectName;
-        public string? SubjectName
-        {
-            get => _SubjectName;
-            set => SetProperty(ref _SubjectName, value);
-        }
-
         public bool Cancelled { get; set; }
         public RelayCommand<ICloseableWindow> Cancel { get; set; }
         public RelayCommand<ICloseableWindow> OK { get; set; }
@@ -46,7 +39,6 @@ namespace PISmartcardClient.ViewModels
         }
         public void Reset()
         {
-            SubjectName = "";
             SelectedAlgorithm = Algorithms[0];
             Cancelled = false;
         }

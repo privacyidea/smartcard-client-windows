@@ -17,20 +17,14 @@
     </Window.InputBindings>
 
     <Grid>
-        <Label Content="Subject Name" Style="{StaticResource PromptLabel}" 
-               HorizontalAlignment="Center" Margin="0,20,0,0" VerticalAlignment="Top"/>
-
-        <TextBox Text="{Binding SubjectName}" Name="InputSubjectName" Style="{StaticResource PromptTextBox}"
-                 HorizontalAlignment="Center" Margin="0,56,0,0" VerticalAlignment="Top" Width="256"/>
-
         <ComboBox ItemsSource="{Binding Algorithms}" SelectedItem="{Binding SelectedAlgorithm}" SelectedIndex="0"
-                  HorizontalAlignment="Center" VerticalAlignment="Top"  Margin="0,136,0,0"
-                  Width="120" Height="27"
+                  HorizontalAlignment="Center" VerticalAlignment="Top"  Margin="0,95,0,0"
+                  Width="160" Height="27"
                   FontSize="16" FontWeight="DemiBold"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 
         <Label Content="Algorithm" Style="{StaticResource PromptLabel}"
-               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,39,0,0"/>
 
         <Button Content="OK" Command="{Binding OK}" CommandParameter="{Binding ElementName=EnrollmentForm}"
                 HorizontalAlignment="Right" Margin="0,187,35,0" VerticalAlignment="Top" 

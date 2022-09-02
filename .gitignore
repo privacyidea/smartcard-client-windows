@@ -9,3 +9,6 @@ YubiKeyPIV/bin/
 YubiKeyPIV/obj/
 Tests/bin
 Tests/obj
+packages/
+Installer/bin
+Installer/obj

@@ -1,4 +1,4 @@
-﻿using System.Configuration;
+﻿using System.Collections.Generic;
 
 namespace PISmartcardClient
 {
@@ -6,5 +6,6 @@ namespace PISmartcardClient
     {
         public string? GetStringProperty(string name);
         public bool? GetBoolProperty(string name);
+        public Dictionary<string, string> GetAll();
     }
 }

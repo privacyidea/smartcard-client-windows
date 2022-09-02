@@ -14,7 +14,6 @@ namespace PISmartcardClient.Windows
             InitializeComponent();
             Owner = App.Current.MainWindow;
             DataContext = App.Current.Services.GetService<EnrollmentFormVM>();
-            InputSubjectName.Focus();
         }
 
         public void CloseWindow()

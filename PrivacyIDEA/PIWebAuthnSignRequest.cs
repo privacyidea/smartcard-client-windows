@@ -1,5 +1,5 @@
 ﻿
-namespace PrivacyIDEASDK
+namespace PrivacyIDEAClient
 {
     class PIWebAuthnSignRequest: PIChallenge
     {

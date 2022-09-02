@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:loadingspinnercontrol="clr-namespace:LoadingSpinnerControl;assembly=LoadingSpinnerControl" 
         xmlns:viewmodels="clr-namespace:PISmartcardClient.ViewModels"
-        d:DataContext="{d:DesignInstance Type=viewmodels:LoadingWindowVM}"
+        d:DataContext="{d:DesignInstance Type=viewmodels:LoadingVM}"
         mc:Ignorable="d"
         x:Name="LoadingWdw"
         WindowStartupLocation="CenterOwner"
@@ -13,19 +13,22 @@
         Title="Please Wait" Height="200" Width="400">
     
     <Grid>
-        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" TextAlignment="Left"
+        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Width="350" Height="100">
+            
+            <loadingspinnercontrol:LoadingSpinner Color="Black" Thickness="4" Height="auto" Width="auto" Cap="Round" VerticalAlignment="Center"
+                                              IsLoading="True" Diameter="60" RenderTransformOrigin="0.985,0.514"/>
+            
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" TextAlignment="Center"
                    FontWeight="DemiBold" FontSize="16"
-                   HorizontalAlignment="Left" VerticalAlignment="Top" Margin="160,72,0,0"
-                   Width="219" Height="30" MaxHeight="50"/>
-
+                   Margin="20,0,0,0"
+                   Width="260" Height="auto" MaxHeight="100"/>
+        </WrapPanel>
+        
         <Button Content="Cancel" Width="130" Height="25"
                 FontSize="16" FontWeight="DemiBold"
                 HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                 Command="{Binding Cancel}" CommandParameter="{Binding ElementName=LoadingWdw}"
-                HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,113,106,0"/>
-
-        <loadingspinnercontrol:LoadingSpinner Color="Black" Thickness="7" Height="auto" Width="auto" Cap="Round"
-                                              IsLoading="True" Diameter="80"
-                                              HorizontalAlignment="Left" VerticalAlignment="Center" Margin="55,0,0,0" RenderTransformOrigin="0.985,0.514"/>
+                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
     </Grid>
 </Window>

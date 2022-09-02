@@ -13,22 +13,21 @@ namespace PISmartcardClient
     // TODO file access rights
     public interface IPersistenceService
     {
-        public bool SaveCSR(PICertificateRequestData data);
-        public List<PICertificateRequestData>? LoadData(string user);
+        public bool SaveCSR(PIPendingCertificateRequest data);
+        public List<PIPendingCertificateRequest> LoadData(string user);
         public bool ExportCertificate(X509Certificate2 certificate, string path);
-        public bool Remove(PICertificateRequestData data);
+        public bool Remove(PIPendingCertificateRequest data);
     }
     public class PersistenceService : IPersistenceService
     {
-        private static readonly string PENDING_DIRECTORY = @"C:\Program Files\PrivacyIDEA PIV Enrollment\Pending\";
+        private static readonly string PENDING_DIRECTORY = @"C:\Program Files\PrivacyIDEA Smartcard Client\Pending\";
         private bool _checkedDir;
 
-        List<PICertificateRequestData>? IPersistenceService.LoadData(string user)
+        List<PIPendingCertificateRequest> IPersistenceService.LoadData(string user)
         {
             EnsureDirectoryExists();
-            //Log("PersistenceService: Checking for data of user " + user);
             string[] fileNames = Directory.GetFiles(PENDING_DIRECTORY, user + "*");
-            List<PICertificateRequestData>? ret = null;
+            List<PIPendingCertificateRequest> ret = new();
             if (fileNames.Length > 0)
             {
                 ret = new();
@@ -39,28 +38,28 @@ namespace PISmartcardClient
                     {
                         try
                         {
-                            if (JsonSerializer.Deserialize(s, typeof(PICertificateRequestData)) is PICertificateRequestData data)
+                            if (JsonSerializer.Deserialize(s, typeof(PIPendingCertificateRequest)) is PIPendingCertificateRequest data)
                             {
                                 ret.Add(data);
                             }
                         }
                         catch (Exception e)
                         {
-                            Log("Unable to deserialize '" + s + "'.");
-                            Log(e);
+                            Error("Unable to deserialize '" + s + "'.");
+                            Error(e);
                         }
 
                     }
                     else
                     {
-                        Log("The file " + fileName + " had no content in it.");
+                        Error("The file " + fileName + " had no content in it.");
                     }
                 }
             }
             return ret;
         }
 
-        bool IPersistenceService.SaveCSR(PICertificateRequestData data)
+        bool IPersistenceService.SaveCSR(PIPendingCertificateRequest data)
         {
             EnsureDirectoryExists();
             string name = data.User + "_" + data.DeviceSerial + "_" + data.Slot.ToString("G") + ".txt";
@@ -72,7 +71,7 @@ namespace PISmartcardClient
             }
             catch (Exception e)
             {
-                Log(e);
+                Error(e);
                 return false;
             }
             return true;
@@ -96,14 +95,13 @@ namespace PISmartcardClient
             }
             catch (Exception e)
             {
-                //TODO check exception types
-                Log(e);
+                Error(e);
                 return false;
             }
             return true;
         }
 
-        bool IPersistenceService.Remove(PICertificateRequestData data)
+        bool IPersistenceService.Remove(PIPendingCertificateRequest data)
         {
             EnsureDirectoryExists();
             string name = data.User + "_" + data.DeviceSerial + "_" + data.Slot.ToString("G") + ".txt";
@@ -114,7 +112,7 @@ namespace PISmartcardClient
             }
             catch (Exception e)
             {
-                Log(e);
+                Error(e);
                 return false;
             }
         }

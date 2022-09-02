@@ -24,7 +24,7 @@ namespace Tests
         public void CreateCSRGenerationFailure()
         {
             _DeviceMock.Setup(m => m.GenerateNewKeyInSlot(PIVSlot.Authentication, PIVAlgorithm.EccP256)).Returns((CngKey)null);
-            var ret = CertUtil.CreateCSRData(_DeviceMock.Object, "testSubject", PIVAlgorithm.EccP256, PIVSlot.Authentication, "testUser");
+            var ret = CertUtil.CreateCSRData(_DeviceMock.Object, "testUser", PIVAlgorithm.EccP256, PIVSlot.Authentication);
             ret.Should().BeNull();
         }
 

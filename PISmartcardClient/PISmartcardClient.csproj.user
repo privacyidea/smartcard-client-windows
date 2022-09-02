@@ -1,13 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup />
+  <PropertyGroup>
+    <_LastSelectedProfileId>C:\Users\Nils\Documents\GitHub\smartcard-client-windows\PISmartcardClient\Properties\PublishProfiles\FolderProfile.pubxml</_LastSelectedProfileId>
+  </PropertyGroup>
   <ItemGroup>
     <ApplicationDefinition Update="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="Windows\ActionPrompt.xaml.cs">
+    <Compile Update="Windows\ConfirmationPrompt.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Windows\EnrollentForm.xaml.cs">
@@ -20,6 +22,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Windows\PINWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Windows\SettingsWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Windows\YKMgmtKeyPrompt.xaml.cs">
@@ -48,7 +53,7 @@
     <Page Update="Styles\SettingsStyle.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Windows\ActionPrompt.xaml">
+    <Page Update="Windows\ConfirmationPrompt.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Windows\EnrollentForm.xaml">
@@ -64,6 +69,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Windows\PinWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Windows\SettingsWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Windows\YKMgmtKeyPrompt.xaml">

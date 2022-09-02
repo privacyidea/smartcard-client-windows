@@ -34,13 +34,14 @@ namespace PISmartcardClient
 
             // Singleton VMs
             services.AddSingleton<MainVM>();
+            services.AddSingleton<SettingsVM>();
 
             // Transient VMs
             services.AddTransient<YKMgmtKeyVM>();
             services.AddTransient<AuthVM>();
             services.AddTransient<PromptVM>();
             services.AddTransient<EnrollmentFormVM>();
-            services.AddTransient<ActionPromptVM>();
+            services.AddTransient<ConfirmationPromptVM>();
             services.AddTransient<LoadingVM>();
             services.AddTransient<PinVM>();
 

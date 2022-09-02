@@ -1,15 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace PIVBase
 {
     public class Utilities
     {
+        private static readonly string LOG_FILE_PATH = @"C:\Program Files\PrivacyIDEA Smartcard Client\log.txt";
+
+        public static bool LogDebug = false;
+
         public static byte[] HexStringToByteArray(string hex)
         {
             hex = hex.Replace(" ", "").Replace("-", "");
@@ -54,20 +57,46 @@ namespace PIVBase
         {
             string ret = BitConverter.ToString(ba);
             if (!dashed)
-                ret.Replace("-", "");
+            {
+                ret = ret.Replace("-", "");
+            }
             return ret;
         }
 
         public static void Log(string message)
         {
-            //Console.WriteLine(message);
-            Trace.WriteLine("[" + Thread.CurrentThread.ManagedThreadId + "]  " + message);
+            if (LogDebug)
+            {
+                string fullmsg = Prefix() + message;
+                Trace.WriteLine(fullmsg);
+                WriteToFile(fullmsg);
+            }
         }
 
-        public static void Log(Exception exception)
+        public static void Error(string message)
         {
-            //Console.WriteLine(exception);
+            string fullmsg = Prefix() + message;
+            Trace.WriteLine(fullmsg);
+            WriteToFile(fullmsg);
+        }
+
+        public static void Error(Exception exception)
+        {
             Trace.WriteLine(exception);
+            WriteToFile(Prefix() + exception.ToString());
+        }
+
+        private static string Prefix()
+        {
+            return $"[{Thread.CurrentThread.ManagedThreadId}][{DateTime.UtcNow:yyyy-MM-dd HH\\:mm\\:ss}] ";
+        }
+
+        public static void WriteToFile(string msg)
+        {
+            // TODO add a testwrite at startup to check??
+            // Do not catch exception so it should be visible in eventviewer?
+            using StreamWriter streamWriter = new(LOG_FILE_PATH, append: true);
+            streamWriter.WriteLine(msg);
         }
     }
 }

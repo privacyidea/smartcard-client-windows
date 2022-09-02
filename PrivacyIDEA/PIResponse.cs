@@ -3,7 +3,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace PrivacyIDEASDK
+namespace PrivacyIDEAClient
 {
     public class PIResponse
     {
@@ -16,9 +16,10 @@ namespace PrivacyIDEASDK
         public bool Status { get; set; } = false;
         public bool Value { get; set; } = false;
         public string Certificate { get; set; } = "";
+        public string RolloutState { get; set; } = "";
         public string Raw { get; set; } = "";
         public List<PIChallenge> Challenges { get; set; } = new List<PIChallenge>();
-        private PIResponse() { }
+        public PIResponse() { }
 
         public List<string> TriggeredTokenTypes()
         {
@@ -57,8 +58,10 @@ namespace PrivacyIDEASDK
                 return null;
             }
 
-            PIResponse ret = new();
-            ret.Raw = json;
+            PIResponse ret = new()
+            {
+                Raw = json
+            };
             try
             {
                 JObject jobj = JObject.Parse(json);
@@ -88,11 +91,10 @@ namespace PrivacyIDEASDK
                     ret.Message = (string)detail["message"];
                     ret.Type = (string)detail["type"];
                     ret.Serial = (string)detail["serial"];
-
+                    ret.RolloutState = (string)detail["rollout_state"];
                     ret.Certificate = (string)detail["certificate"];
 
-                    JArray multiChallenge = detail["multi_challenge"] as JArray;
-                    if (multiChallenge != null)
+                    if (detail["multi_challenge"] is JArray multiChallenge)
                     {
                         foreach (JToken element in multiChallenge.Children())
                         {
@@ -102,23 +104,28 @@ namespace PrivacyIDEASDK
                             string serial = (string)element["serial"];
                             if (type == "webauthn")
                             {
-                                PIWebAuthnSignRequest tmp = new PIWebAuthnSignRequest();
+                                PIWebAuthnSignRequest tmp = new()
+                                {
+                                    Message = message,
+                                    Serial = serial,
+                                    TransactionID = transactionid,
+                                    Type = type
+                                };
                                 JToken attr = element["attributes"];
                                 tmp.WebAuthnSignRequest = attr["webAuthnSignRequest"].ToString(Formatting.None);
                                 tmp.WebAuthnSignRequest.Replace("\n", "");
-                                tmp.Message = message;
-                                tmp.Serial = serial;
-                                tmp.TransactionID = transactionid;
-                                tmp.Type = type;
+                                
                                 ret.Challenges.Add(tmp);
                             }
                             else
                             {
-                                PIChallenge tmp = new PIChallenge();
-                                tmp.Message = message;
-                                tmp.Serial = serial;
-                                tmp.TransactionID = transactionid;
-                                tmp.Type = type;
+                                PIChallenge tmp = new()
+                                {
+                                    Message = message,
+                                    Serial = serial,
+                                    TransactionID = transactionid,
+                                    Type = type
+                                };
                                 ret.Challenges.Add(tmp);
                             }
                         }

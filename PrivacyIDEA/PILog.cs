@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PrivacyIDEASDK
+namespace PrivacyIDEAClient
 {
     public interface PILog
     {

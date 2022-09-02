@@ -1,18 +1,18 @@
 ﻿using System;
-using System.Configuration;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using PrivacyIDEASDK;
+using Newtonsoft.Json.Linq;
+using PrivacyIDEAClient;
 using static PIVBase.Utilities;
 
 namespace PISmartcardClient
 {
-    // TODO bundle all PI-SDK calls to catch exceptions
     public class PIConfigurationException : Exception { }
     public sealed class PrivacyIDEAService : IPrivacyIDEAService, PILog
     {
-        private static readonly string USER_AGENT = "privacyIDEA-Enrollment-Tool";
+        private static readonly string USER_AGENT = "privacyIDEA Smartcard Client";
         private readonly IWindowService _WindowService;
         private readonly ISettingsService _SettingsService;
 
@@ -22,6 +22,7 @@ namespace PISmartcardClient
         private Action<string?>? _UpdateStatusField;
 
         private PrivacyIDEA? _PrivacyIDEA;
+
         public PrivacyIDEAService(IWindowService windowService, ISettingsService settingsService)
         {
             _WindowService = windowService;
@@ -30,40 +31,11 @@ namespace PISmartcardClient
             string? url = _SettingsService.GetStringProperty("url");
             if (url is not null)
             {
-                bool? tmp = _SettingsService.GetBoolProperty("sslverify");
-                bool sslverify = true;
-                if (tmp.HasValue && !tmp.Value)
+                bool? disableSSL = _SettingsService.GetBoolProperty("disable_ssl");
+                _PrivacyIDEA = new(url, USER_AGENT, !disableSSL ?? true)
                 {
-                    sslverify = false;
-                }
-                _PrivacyIDEA = new(url, USER_AGENT, sslverify);
-                _PrivacyIDEA.Logger = this;
-            }
-        }
-
-        private void SettingChanging(object sender, SettingChangingEventArgs e)
-        {
-            Log("SettingChanging: " + e.SettingName + " to " + e.NewValue);
-
-            if (e.SettingName is "url")
-            {
-                if (_PrivacyIDEA is null)
-                {
-                    _PrivacyIDEA = new((string)e.NewValue, USER_AGENT, _SettingsService.GetBoolProperty("sslverify") ?? true);
-                    _PrivacyIDEA.Logger = this;
-                }
-                else
-                {
-                    _PrivacyIDEA.Url = (string)e.NewValue;
-                }
-            }
-
-            if (e.SettingName is "sslverify")
-            {
-                if (_PrivacyIDEA is not null)
-                {
-                    _PrivacyIDEA.SSLVerify = (bool)e.NewValue;
-                }
+                    Logger = this
+                };
             }
         }
 
@@ -71,7 +43,6 @@ namespace PISmartcardClient
         {
             Log("PrivacyIDEA Service: DoUserAuthentication");
             EnsurePISetup();
-
             (bool success, string? user, string? secondInput) = _WindowService.AuthenticationPrompt();
 
             if (!success)
@@ -100,12 +71,12 @@ namespace PISmartcardClient
                 }
                 catch (HttpRequestException e)
                 {
-                    Log(e);
+                    Error(e);
                     exception = e;
                 }
                 catch (UriFormatException)
                 {
-                    Log("PrivacyIDEA URL is empty or in wrong format");
+                    Error("PrivacyIDEA URL is empty or in wrong format");
                     UpdateStatus("PrivacyIDEA URL is empty or in wrong format!");
                 }
                 finally
@@ -126,7 +97,7 @@ namespace PISmartcardClient
             return false;
         }
 
-        async Task<string?> IPrivacyIDEAService.SendCSR(string csr, string attestation, string? description)
+        async Task<PIResponse?> IPrivacyIDEAService.SendCSR(string csr, string attestation, string? description)
         {
             EnsurePISetup();
             if (string.IsNullOrEmpty(_CurrentUsername))
@@ -148,7 +119,7 @@ namespace PISmartcardClient
             }
             catch (HttpRequestException e)
             {
-                Log(e);
+                Error(e);
                 exception = e;
             }
             finally
@@ -161,7 +132,71 @@ namespace PISmartcardClient
                 throw exception;
             }
 
-            return response is not null ? response.Certificate : null;
+            return response;
+        }
+
+        async Task<List<PIToken>> IPrivacyIDEAService.GetTokenForCurrentUser(Dictionary<string, string> parameters)
+        {
+            string? response = null;
+            Exception? exception = null;
+            try
+            {
+                response = await Task.Run(() => _PrivacyIDEA!.GetToken(parameters));
+            }
+            catch (TaskCanceledException tce)
+            {
+                Log("Sending of the request cancelled!");
+                exception = tce;
+            }
+            catch (HttpRequestException e)
+            {
+                Error(e);
+                exception = e;
+            }
+            finally
+            {
+                _WindowService.StopLoadingWindow();
+            }
+
+            if (exception is not null)
+            {
+                throw exception;
+            }
+
+            var ret = new List<PIToken>();
+            if (response is not null)
+            {
+                try
+                {
+                    JObject jobj = JObject.Parse(response);
+                    JToken? jarr = jobj["result"]?["value"]?["tokens"];
+                    if (jarr is not null)
+                    {
+                        JArray? token = jarr as JArray;
+                        if (token is not null)
+                        {
+                            foreach (var element in token)
+                            {
+                                var tmp = PIToken.FromJSON(element.ToString(), Error);
+                                if (tmp is not null)
+                                {
+                                    ret.Add(tmp);
+                                } 
+                                else
+                                {
+                                    Error($"Could not parse input {element} to token, skipping");
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Error(e);
+                }
+            }
+
+            return ret;
         }
 
         string? IPrivacyIDEAService.CurrentUser() => _CurrentUsername;
@@ -216,8 +251,9 @@ namespace PISmartcardClient
 
         public void PIError(Exception exception)
         {
-            Log(exception);
+            Error(exception);
         }
+
         #endregion PI_LOG
     }
 }

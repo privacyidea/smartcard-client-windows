@@ -14,6 +14,7 @@ namespace PISmartcardClient.Utilities
 
         private static readonly string BEGIN_CSR = "-----BEGIN CERTIFICATE REQUEST-----\n";
         private static readonly string END_CSR = "\n-----END CERTIFICATE REQUEST-----";
+
         public static string FormatCertBytesForFile(byte[] certBytes, bool csr = false)
         {
             string ret = "";
@@ -31,7 +32,7 @@ namespace PISmartcardClient.Utilities
         }
 
         public static PICertificateRequestData? CreateCSRData(
-            IPIVDevice device, string subjectName, PIVAlgorithm algorithm, PIVSlot slot, string user)
+            IPIVDevice device, string subjectName, PIVAlgorithm algorithm, PIVSlot slot)
         {
             CngKey? publicKey = device.GenerateNewKeyInSlot(slot, algorithm);
             if (publicKey == null)
@@ -51,20 +52,33 @@ namespace PISmartcardClient.Utilities
                 ECDsaCng ecdsa = new(publicKey);
                 csr = new("cn=" + subjectName, ecdsa, HashAlgorithmName.SHA256);
             }
-
+           
             X509SignatureGenerator signatureGenerator = device.GetX509SignatureGenerator(slot, algorithm);
             byte[]? pkcs10Bytes = csr.CreateSigningRequest(signatureGenerator);
+          
             string strCSR = FormatCertBytesForFile(pkcs10Bytes, true);
             if (string.IsNullOrEmpty(strCSR))
             {
                 Log("Could not create CSR.");
                 return null;
             }
-
+            
             X509Certificate2 attCert = device.GetAttestationForSlot(slot);
             string attestation = new(PemEncoding.Write("CERTIFICATE", attCert.RawData));
 
-            return new PICertificateRequestData(slot, device.Serial(), user, strCSR, attestation);
+            return new PICertificateRequestData(strCSR, attestation);
+        }
+
+        public static X509Certificate2 SelfSignedCert(string cn)
+        {
+            if (!cn.StartsWith("CN="))
+            {
+                cn = "CN=" + cn;
+            }
+            var certRequest = new CertificateRequest(cn, RSA.Create(), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            var cert = certRequest.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(10));
+            Log($"Generated Cert has private key: {cert.HasPrivateKey}");
+            return cert;
         }
 
         public static X509Certificate2? ExtractCertificateFromResponse(string response)
@@ -80,7 +94,7 @@ namespace PISmartcardClient.Utilities
             catch (Exception e)
             {
                 Log("Failed to convert string to X509Certificate.");
-                Log(e);
+                Error(e);
             }
             return null;
         }

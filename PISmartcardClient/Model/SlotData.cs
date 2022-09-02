@@ -7,6 +7,9 @@ namespace PISmartcardClient.Model
         public string? Issuer { get; set; }
         public string? SubjectName { get; set; }
         public string? ExpirationDate { get; set; }
+        public string? DateOfIssue { get; set; }
+        public string? Thumbprint { get; set; }
+        public string? SerialNumber { get; set; }
         public string? KeyType { get; set; }
         public X509Certificate2? Certificate { get; set; }
     }

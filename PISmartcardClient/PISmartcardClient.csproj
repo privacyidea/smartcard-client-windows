@@ -13,28 +13,53 @@
     <StartupObject></StartupObject>
     <AssemblyName>PISmartcardClient</AssemblyName>
     <RootNamespace>PISmartcardClient</RootNamespace>
+    <Authors>NetKnights GmbH</Authors>
+    <Product>PrivacyIDEA Smartcard Client</Product>
+    <PackageProjectUrl>https://github.com/privacyidea/smartcard-client-windows</PackageProjectUrl>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="proto\caservice.proto" />
     <None Remove="Windows\settingsCog.png" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="LoadingSpinner.WPF" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0-rc.1.21451.13" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Microsoft.Toolkit.Mvvm" Version="7.1.0-rc2" />
     <PackageReference Include="System.Management" Version="5.0.0" />
-    <PackageReference Include="Yubico.YubiKey" Version="1.0.1" />
+    <PackageReference Include="Yubico.YubiKey" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PIVBase\PIVBase.csproj" />
-    <ProjectReference Include="..\PrivacyIDEA\PrivacyIDEASDK.csproj" />
+    <ProjectReference Include="..\PrivacyIDEA\PrivacyIDEA Client.csproj" />
     <ProjectReference Include="..\YubiKeyPIV\YubiKeyPIV.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Windows\settingsCog.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="proto\caservice.proto" GrpcServices="Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
 </Project>

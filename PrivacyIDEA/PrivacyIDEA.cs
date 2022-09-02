@@ -9,13 +9,12 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace PrivacyIDEASDK
+namespace PrivacyIDEAClient
 {
     public class PrivacyIDEA : IDisposable
     {
         public string Url { get; set; } = "";
         public string Realm { get; set; } = "";
-        public Dictionary<string, string> RealmMap { get; set; } = new();
 
         private bool _SSLVerify = true;
         public bool SSLVerify
@@ -49,7 +48,7 @@ namespace PrivacyIDEASDK
         private static readonly List<string> exludeFromURIEscape = new(new string[]
            { "credentialid", "clientdata", "signaturedata", "authenticatordata", "userhandle", "assertionclientextensions" });
 
-        private static readonly List<string> logExcludedEndpoints = new(new string[]
+        public List<string> logExcludedEndpoints = new(new string[]
            { "/validate/polltransaction", "/auth" });
 
         public PrivacyIDEA(string url, string useragent, bool sslVerify = true)
@@ -86,16 +85,33 @@ namespace PrivacyIDEASDK
                 { "user", username }
             };
 
-            AddRealmForDomain(domain, parameters);
 
             var response = await SendRequest("/validate/triggerchallenge", parameters, cancellationToken);
             PIResponse ret = PIResponse.FromJSON(response, this);
             return ret;
         }
 
+        public async Task<string> GetToken(Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
+        {
+            Log($"Getting token info with params:\n{string.Join(",", parameters)}");
+            if (_HttpClient.DefaultRequestHeaders.Authorization == null)
+            {
+                Log("Unable to get token info without authorization header.");
+                return null;
+            }
+
+            //if (!string.IsNullOrEmpty(realm))
+            //{
+            //    parameters.Add("realm", realm);
+            //}
+
+            var response = await SendRequest("/token", parameters, cancellationToken, method: "GET");
+            return response;
+        }
+
         public async Task<string> Auth(string user, string pass, string realm = default, CancellationToken cancellationToken = default)
         {
-            Log("PrivacyIDEA SDK Auth: user=" + user + ", pass=" + pass + ", realm=" + realm);
+            Log("PrivacyIDEA Client Auth: user=" + user + ", pass=" + pass + ", realm=" + realm);
             Dictionary<string, string> dict = new()
             {
                 { "username", user },
@@ -229,8 +245,6 @@ namespace PrivacyIDEASDK
                 parameters.Add("transaction_id", transactionid);
             }
 
-            AddRealmForDomain(domain, parameters);
-
             var tResponse = SendRequest("/validate/check", parameters, default(CancellationToken), new List<KeyValuePair<string, string>>());
             var response = tResponse.GetAwaiter().GetResult();
             return PIResponse.FromJSON(response, this);
@@ -295,8 +309,6 @@ namespace PrivacyIDEASDK
             {
                 parameters.Add("assertionclientextensions", ace);
             }
-
-            AddRealmForDomain(domain, parameters);
 
             // The origin has to be set in the header for WebAuthn authentication
             List<KeyValuePair<string, string>> headers = new()
@@ -400,7 +412,7 @@ namespace PrivacyIDEASDK
             }
 
             var awaiter = _HttpClient.SendAsync(request, cancellationToken).GetAwaiter();
-         
+
             HttpResponseMessage responseMessage = awaiter.GetResult();
 
             if (responseMessage.StatusCode != HttpStatusCode.OK)
@@ -425,42 +437,6 @@ namespace PrivacyIDEASDK
             }
 
             return Task.FromResult(ret);
-        }
-
-        /// <summary>
-        /// Evaluates which realm to use for a given domain and adds it to the parameter dictionary.
-        /// The realm mapping takes precedence over the general realm that can be set. If no realm is found, the parameter is omitted.
-        /// </summary>
-        /// <param name="domain"></param>
-        /// <param name="parameters"></param>
-        private void AddRealmForDomain(string domain, Dictionary<string, string> parameters)
-        {
-            if (!string.IsNullOrEmpty(domain))
-            {
-                string r = "";
-                string d = domain.ToUpper();
-                Log("Searching realm for domain " + d);
-                if (RealmMap.ContainsKey(d))
-                {
-                    r = RealmMap[d];
-                    Log("Found realm in mapping: " + r);
-                }
-
-                if (string.IsNullOrEmpty(r) && !string.IsNullOrEmpty(Realm))
-                {
-                    r = Realm;
-                    Log("Using default realm " + r);
-                }
-
-                if (string.IsNullOrEmpty(r))
-                {
-                    parameters.Add("realm", r);
-                }
-                else
-                {
-                    Log("No realm configured for domain " + d);
-                }
-            }
         }
 
         internal StringContent DictToEncodedStringContent(Dictionary<string, string> dict)

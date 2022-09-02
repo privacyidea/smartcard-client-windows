@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using PISmartcardClient.Utilities;
 using PIVBase;
-using PrivacyIDEASDK;
+using PrivacyIDEAClient;
 using PISmartcardClient.ExtensionMethods;
 using static PIVBase.Utilities;
 using PISmartcardClient.Model;
@@ -14,6 +15,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Net.Http;
 using System.Management;
+using System.Diagnostics;
 
 namespace PISmartcardClient.ViewModels
 {
@@ -22,7 +24,7 @@ namespace PISmartcardClient.ViewModels
         public PIVSlot CurrentSlot = PIVSlot.None;
 
         private bool _ShowCenterControls;
-        public bool ShowCenterControls
+        public bool ShowCenterGrid
         {
             get => _ShowCenterControls;
             set => SetProperty(ref _ShowCenterControls, value);
@@ -41,11 +43,11 @@ namespace PISmartcardClient.ViewModels
             set => SetProperty(ref _PendingRolloutText, value);
         }
 
-        private bool _ShowCompleteBtn;
-        public bool ShowCompleteBtn
+        private bool _ShowCheckPendingBtn;
+        public bool ShowCheckPendingBtn
         {
-            get => _ShowCompleteBtn;
-            set => SetProperty(ref _ShowCompleteBtn, value);
+            get => _ShowCheckPendingBtn;
+            set => SetProperty(ref _ShowCheckPendingBtn, value);
         }
 
         private string _LoginSwitchBtnText = "Login";
@@ -79,7 +81,7 @@ namespace PISmartcardClient.ViewModels
         private string? _CurrentUser;
         public string? CurrentUserLabel
         {
-            get => "User: " + (_CurrentUser ?? "None");
+            get => _CurrentUser ?? "No User";
             set => SetProperty(ref _CurrentUser, value);
         }
 
@@ -104,19 +106,19 @@ namespace PISmartcardClient.ViewModels
             }
         }
 
-        public DelegateCommand BtnCreate { get; set; }
+        public DelegateCommand BtnNew { get; set; }
         public DelegateCommand BtnExport { get; set; }
-        public DelegateCommand BtnSettings { get; set; }
         public DelegateCommand BtnChangeSlot { get; set; }
         public DelegateCommand BtnChangeUser { get; set; }
-        public DelegateCommand BtnComplete { get; set; }
+        public DelegateCommand BtnCheckPending { get; set; }
         public DelegateCommand BtnReloadDevices { get; set; }
         public DelegateCommand BtnChangePIN { get; set; }
         public DelegateCommand BtnChangePUK { get; set; }
-        public DelegateCommand BtnChangeMgmtKey { get; set; }
+        public DelegateCommand BtnSettings { get; set; }
 
-        private List<PICertificateRequestData>? _PendingRolloutsForCurrentUser;
-        private PICertificateRequestData? _PendingRollout;
+        // Pending CSRs are attempted to be loaded upon user login or device insertion
+        private List<PIPendingCertificateRequest>? _PendingCSRsForUserDevice;
+        private PIPendingCertificateRequest? _PendingCSRForSlot;
 
         private IPIVDevice? _CurrentDevice;
         public IPIVDevice? CurrentDevice
@@ -137,14 +139,13 @@ namespace PISmartcardClient.ViewModels
                 _CurrentDevice = value;
 
                 // Reset controls
-                ShowCenterControls = false;
+                ShowCenterGrid = false;
                 ShowCreateBtn = false;
                 CurrentSlot = PIVSlot.None;
                 _CurrentSlotData = null;
                 BtnChangeSlot.RaiseCanExecuteChanged();
                 BtnChangePIN.RaiseCanExecuteChanged();
                 BtnChangePUK.RaiseCanExecuteChanged();
-                BtnChangeMgmtKey.RaiseCanExecuteChanged();
                 NoSlotOrCertText = _CurrentDevice is not null
                                    ? "Please select a slot."
                                    : "Please select a device.";
@@ -176,9 +177,9 @@ namespace PISmartcardClient.ViewModels
                 (commandParameter) => _CurrentDevice is not null
                                    && CurrentSlot.ToString("G") != (string)commandParameter);
 
-            BtnCreate = new(
+            BtnNew = new(
                 async (_) => await GenerateNewButtonClick(),
-                (_) => CurrentDevice is not null);
+                (_) => CurrentDevice is not null && _PendingCSRForSlot is null);
 
             BtnExport = new(
                 async (_) => await ExportCertFromCurrentSlot(),
@@ -189,15 +190,15 @@ namespace PISmartcardClient.ViewModels
 
             BtnChangeUser = new(async (_) => await LoginLogout());
 
-            BtnComplete = new(async (_) =>
+            BtnCheckPending = new((_) =>
             {
-                if (_PendingRollout is not null)
+                if (_PendingCSRForSlot is not null)
                 {
-                    await CompleteCertificateRollout(_PendingRollout!);
+                    CompleteCurrentPendingCSR();
                 }
                 else
                 {
-                    Log("Invalid state: Trying to complete rollout but no pending rollout is set.");
+                    Error("Invalid state: Trying to complete rollout but no pending rollout is set.");
                 }
             });
 
@@ -206,21 +207,20 @@ namespace PISmartcardClient.ViewModels
             BtnChangePIN = new((_) =>
             {
                 bool? success = CurrentDevice?.ChangePIN();
-                Status = success.HasValue && success.Value ? "PIN change successful" : "PIN change failed!";
+                Status = success.HasValue && success.Value ? "PIN change successful" : "PIN change cancelled or failed!";
             },
             (_) => CurrentDevice is not null);
 
             BtnChangePUK = new((_) =>
             {
                 bool? success = CurrentDevice?.ChangePUK();
-                Status = success.HasValue && success.Value ? "PUK change successful" : "PUK change failed!";
+                Status = success.HasValue && success.Value ? "PUK change successful" : "PUK change cancelled or failed!";
             },
             (_) => CurrentDevice is not null);
 
-            BtnChangeMgmtKey = new((_) => { });
+            BtnSettings = new((_) => _WindowService.Settings());
 
             RegisterUSBWatchers();
-
             ReloadDevices();
         }
 
@@ -244,6 +244,8 @@ namespace PISmartcardClient.ViewModels
             {
                 Log("MOF=" + args.NewEvent.GetText(TextFormat.Mof));
                 _DeviceInserted = false;
+                CheckForPendingCSR();
+
                 Task.Delay(300).ContinueWith((t) => _UIDispatcher.Invoke(() => ReloadDevices()));
                 Task.Delay(300).ContinueWith((t) => _DeviceInserted = true);
             }
@@ -256,6 +258,8 @@ namespace PISmartcardClient.ViewModels
             {
                 Log("MOF=" + args.NewEvent.GetText(TextFormat.Mof));
                 _DeviceRemoved = false;
+                ResetPendingCSRs();
+
                 Task.Delay(300).ContinueWith((t) => _UIDispatcher.Invoke(() => ReloadDevices(true)));
                 Task.Delay(300).ContinueWith((t) => _DeviceRemoved = true);
             }
@@ -313,7 +317,7 @@ namespace PISmartcardClient.ViewModels
                 // Last device was removed, reset everything
                 SelectedDevice = null;
                 _CurrentDevice = null;
-                ShowCenterControls = false;
+                ShowCenterGrid = false;
                 ShowCreateBtn = false;
                 CurrentSlot = PIVSlot.None;
                 NoSlotOrCertText = "Please insert a device!";
@@ -322,25 +326,83 @@ namespace PISmartcardClient.ViewModels
             BtnChangePIN.RaiseCanExecuteChanged();
             BtnChangePUK.RaiseCanExecuteChanged();
             BtnChangeSlot.RaiseCanExecuteChanged();
-            BtnCreate.RaiseCanExecuteChanged();
+            BtnNew.RaiseCanExecuteChanged();
         }
 
         /// <summary>
         /// Loads all pending for the current user. If user is null, clears the UI.
         /// </summary>
         /// <param name="user"></param>
-        private void LoadPendingEnrollmentsForUser(string? user)
+        private async void CompleteCurrentPendingCSR()
         {
-            if (user is not null)
+            if (_PendingCSRForSlot is null)
             {
-                _PendingRolloutsForCurrentUser = _PersistenceService.LoadData(user!);
-                CheckPendingRolloutsForCurrentSlot();
+                Error("CompleteCurrentPendingCSR but there is none pending!");
+                return;
             }
-            else
+            Log("CompleteCurrentPendingCSR");
+
+            string user = _PendingCSRForSlot.User;
+            string serial = _PendingCSRForSlot.TokenSerial;
+
+            Dictionary<string, string> parameters = new()
             {
-                _PendingRolloutsForCurrentUser = null;
-                PendingRolloutText = null;
-                ShowCompleteBtn = false;
+                { "username", user },
+                { "serial", serial }
+            };
+
+            var tokenList = await _PrivacyIDEAService.GetTokenForCurrentUser(parameters);
+            bool completed = false;
+            X509Certificate2? cert = null;
+            if (tokenList.Count > 0)
+            {
+                PIToken token = tokenList[0];
+                if (token.data.TryGetValue("rollout_state", out var rolloutState))
+                {
+                    // TODO what is the rollout state for enrolled token
+                    if (rolloutState is not null && (string)rolloutState == "")
+                    {
+                        if (token.info.TryGetValue("certificate", out object? objCert) && objCert is string certStr)
+                        {
+                            cert = CertUtil.ExtractCertificateFromResponse(certStr);
+                        }
+                        else
+                        {
+                            Error("Response did not contain certificate!");
+                        }
+                    }
+                }
+            }
+
+            if (cert is not null)
+            {
+                Log($"Certificate received from server.");
+                bool proceed = _WindowService.ConfirmationPrompt($"Your certificate token {serial} is complete!\nDo you want to import it into slot {_PendingCSRForSlot.Slot:G} now?");
+                if (proceed)
+                {
+                    try
+                    {
+                        _CurrentDevice!.ImportCertificate(_PendingCSRForSlot.Slot, cert);
+                        Log("Import completed");
+                        completed = true;
+                    }
+                    catch (Exception e)
+                    {
+                        Error(e);
+                    }
+                }
+                else
+                {
+                    Log("Importing certificate cancelled by user.");
+                }
+            }
+
+            if (completed)
+            {
+                string message = $"Completed rollout for the following token:\n\n{_PendingCSRForSlot.TokenSerial} in slot {_PendingCSRForSlot.Slot:G}";
+                _PersistenceService.Remove(_PendingCSRForSlot);
+                _WindowService.ConfirmationPrompt(message, false);
+                await ReloadSlot();
             }
         }
 
@@ -370,7 +432,7 @@ namespace PISmartcardClient.ViewModels
                         string newUser = _PrivacyIDEAService.CurrentUser()!;
                         CurrentUserLabel = newUser;
                         LoginSwitchBtnText = "Logout";
-                        LoadPendingEnrollmentsForUser(newUser);
+                        CheckForPendingCSR();
                     }
                     return authenticated;
                 }
@@ -379,39 +441,52 @@ namespace PISmartcardClient.ViewModels
                     _PrivacyIDEAService.Logout();
                     CurrentUserLabel = null;
                     LoginSwitchBtnText = "Login";
-                    LoadPendingEnrollmentsForUser(null);
+                    ResetPendingCSRs();
                 }
             }
             else
             {
-                Log("Cannot authenticate without PrivacyIDEA configured.");
+                Error("Cannot authenticate without PrivacyIDEA configured.");
             }
             return false;
         }
 
-        private void CheckPendingRolloutsForCurrentSlot()
+        private void CheckForPendingCSR()
         {
-            Log("CheckPendingRolloutsForCurrentSlot");
-            if (CurrentDevice is not null && _PendingRolloutsForCurrentUser is not null)
+            Log($"Checking for pending CSR for slot {CurrentSlot:G}");
+            if (_PrivacyIDEAService.CurrentUser() is string username && CurrentSlot is not PIVSlot.None && _CurrentDevice is IPIVDevice curDevice)
             {
-                string serial = CurrentDevice!.Serial();
-                foreach (PICertificateRequestData data in _PendingRolloutsForCurrentUser)
+                var pendingForUser = _PersistenceService.LoadData(username);
+                _PendingCSRsForUserDevice = pendingForUser.FindAll(item => item.DeviceSerial == curDevice.Serial());
+
+                if (_PendingCSRsForUserDevice.Find(item => item.Slot == CurrentSlot) is PIPendingCertificateRequest pending)
                 {
-                    if (data.DeviceSerial == serial && data.Slot == CurrentSlot)
-                    {
-                        _PendingRollout = data;
-                        ShowCompleteBtn = true;
-                        PendingRolloutText = "Pending rollout found for this slot.\nStarted: " + data.CreationTime.ToLongDateString();
-                    }
+                    _PendingCSRForSlot = pending;
+                    ShowCheckPendingBtn = true;
+                    PendingRolloutText = $"There is a pending certificate request for this slot that was started {_PendingCSRForSlot.CreationTime}";
+                    BtnNew.RaiseCanExecuteChanged();
+                }
+                else
+                {
+                    ShowCheckPendingBtn = false;
+                    _PendingCSRForSlot = null;
                 }
             }
+        }
+
+        private void ResetPendingCSRs()
+        {
+            Log("Resetting pending CSRs");
+            _PendingCSRsForUserDevice = null;
+            _PendingCSRForSlot = null;
+            ShowCheckPendingBtn = false;
         }
 
         private async Task ExportCertFromCurrentSlot()
         {
             Log("Exporting certificate from slot " + CurrentSlot.ToString("G"));
 
-            string? path = _WindowService.SaveFileDialog("Certificate File (PEM, CRT)|*.pem;*.crt");
+            string? path = _WindowService.SaveFileDialog("Certificate File (PEM, CRT)|*.pem;*.crt", CurrentSlotData?.SerialNumber ?? "");
 
             if (string.IsNullOrEmpty(path))
             {
@@ -426,7 +501,7 @@ namespace PISmartcardClient.ViewModels
                 X509Certificate2? cert = CurrentDevice?.GetCertificate(CurrentSlot);
                 if (cert is null)
                 {
-                    Log("No cert to export in selected slot");
+                    Error("No cert to export in selected slot");
                     return;
                 }
 
@@ -444,19 +519,20 @@ namespace PISmartcardClient.ViewModels
 
         private async Task LoadSlot(PIVSlot slot)
         {
+            Log($"Loading Slot {slot:G}");
             if (slot is not PIVSlot.None)
             {
-                _WindowService.StartLoadingWindow("Retrieving slot data...");
-
                 await Task.Run(() =>
                 {
                     CurrentSlot = slot;
                     X509Certificate2 cert = CurrentDevice!.GetCertificate(slot);
-
                     CurrentSlotData = cert is not null
                         ? new SlotData
                         {
                             ExpirationDate = cert.NotAfter.ToShortDateString(),
+                            DateOfIssue = cert.NotBefore.ToShortDateString(),
+                            Thumbprint = cert.Thumbprint,
+                            SerialNumber = cert.SerialNumber,
                             SubjectName = cert.SubjectName.Decode(X500DistinguishedNameFlags.None).Replace("CN=", ""),
                             Issuer = cert.Issuer.Replace("CN=", ""),
                             KeyType = new Oid(cert.GetKeyAlgorithm()).FriendlyName ?? "Unknown",
@@ -464,24 +540,29 @@ namespace PISmartcardClient.ViewModels
                         }
                         : null;
 
+                    CheckForPendingCSR();
+
                     _UIDispatcher.Invoke(() =>
                     {
-                        // TODO enable when this has a use
-                        //CheckPendingRolloutsForCurrentSlot();
-
                         BtnChangeSlot.RaiseCanExecuteChanged();
-                        BtnCreate.RaiseCanExecuteChanged();
+                        BtnNew.RaiseCanExecuteChanged();
                         BtnExport.RaiseCanExecuteChanged();
                         ShowCreateBtn = true;
-                        ShowCenterControls = CurrentSlotData is not null;
-                        if (!ShowCenterControls)
+                        ShowCenterGrid = CurrentSlotData is not null;
+                        if (!ShowCenterGrid)
                         {
                             NoSlotOrCertText = "There is currently no certificate in this slot.";
                         }
                     });
                 });
+            }
+        }
 
-                _WindowService.StopLoadingWindow();
+        private async Task ReloadSlot()
+        {
+            if (CurrentSlot != PIVSlot.None)
+            {
+                await LoadSlot(CurrentSlot);
             }
         }
 
@@ -490,115 +571,119 @@ namespace PISmartcardClient.ViewModels
             PILog("Generating new certificate for slot " + CurrentSlot.ToString("G"));
             if (CurrentSlot is PIVSlot.None)
             {
-                Log("No PIV Slot selected!");
+                Error("No PIV Slot selected!");
                 return;
             }
             if (CurrentDevice is null)
             {
-                Log("No device selected to generate new key on");
+                Error("No device selected to generate new key on");
                 return;
             }
+
             if (string.IsNullOrEmpty(_PrivacyIDEAService.CurrentUser()))
             {
-
                 bool b = await LoginLogout();
                 if (!b)
                 {
-                    Log("No user authenticated.");
+                    Error("No user authenticated.");
                     return;
                 }
             }
+            string subjectName = _PrivacyIDEAService.CurrentUser()!;
 
             PIVSlot slot = CurrentSlot;
-            (bool success, string? subjectName, string? algorithm) = _WindowService.EnrollmentForm();
+            (bool success, string? algorithm) = _WindowService.EnrollmentForm();
 
             if (!success)
             {
-                Log("EnrollmentForm failure.");
+                Log("EnrollmentForm cancelled.");
                 return;
             }
-            if (string.IsNullOrEmpty(subjectName))
-            {
-                Log("Empty SubjectName!");
-                return;
-            }
+
             PIVAlgorithm pivAlgorithm = algorithm!.ToEnum<PIVAlgorithm>();
 
-            PICertificateRequestData? data = CertUtil.CreateCSRData(CurrentDevice, subjectName, pivAlgorithm, slot, _CurrentUser!);
+            PICertificateRequestData? data = CertUtil.CreateCSRData(CurrentDevice, subjectName, pivAlgorithm, slot);
             if (data != null)
             {
-                _PersistenceService.SaveCSR(data);
-                await CompleteCertificateRollout(data);
-            }
-            else
-            {
-                Log("Failed to generate CSR.");
-            }
-        }
-
-        private async Task CompleteCertificateRollout(PICertificateRequestData data)
-        {
-            Log("CompleteCertificateRollout");
-            if (CurrentDevice is null)
-            {
-                Log("No device selected.");
-                return;
-            }
-
-            if (_PrivacyIDEAService.IsConfigured() && !string.IsNullOrEmpty(_PrivacyIDEAService.CurrentUser()))
-            {
-                string desc = _CurrentDevice!.ManufacturerName() + " " + _CurrentDevice!.DeviceType()
-                            + _CurrentDevice!.DeviceVersion() + " (Serial " + _CurrentDevice!.Serial() + ")";
-
-                string? certStr = null;
-                try
+                if (_PrivacyIDEAService.IsConfigured() && !string.IsNullOrEmpty(_PrivacyIDEAService.CurrentUser()))
                 {
-                    certStr = await _PrivacyIDEAService.SendCSR(data.CSR, data.Attestation, desc);
-                }
-                catch (HttpRequestException e)
-                {
-                    Status = e.Message;
-                    return;
-                }
-                catch (TaskCanceledException)
-                {
-                    return;
-                }
+                    string description = $"{_CurrentDevice!.DeviceType()} {_CurrentDevice!.DeviceVersion()} (Serial {_CurrentDevice!.Serial()})";
 
-                // TODO check error
-                if (string.IsNullOrEmpty(certStr))
-                {
-                    Log("No Cert received!");
-                    Status = "Response from PI did not contain a certificate!";
-                    return;
-                }
-
-                X509Certificate2? cert = CertUtil.ExtractCertificateFromResponse(certStr);
-                if (cert is not null)
-                {
-                    bool success = CurrentDevice.ImportCertificate(data.Slot, cert);
-                    if (success)
+                    PIResponse? response;
+                    Log("Sending CSR to privacyIDEA...");
+                    try
                     {
-                        Log("Import successful!");
-                        Status = "Imported the certificate successfully!";
-                        await LoadSlot(data.Slot);
+                        response = await _PrivacyIDEAService.SendCSR(data.CSR, data.Attestation, description);
+                    }
+                    catch (HttpRequestException e)
+                    {
+                        Status = e.Message;
+                        Error(e);
+                        return;
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        Log("Sending of CSR cancelled.");
+                        return;
+                    }
 
-                        // Cleanup after success
-                        _PersistenceService.Remove(data);
-                        _PendingRollout = null;
-                        ShowCompleteBtn = false;
-                        PendingRolloutText = null;
+                    if (response is null)
+                    {
+                        Error("No response received from the privacyIDEA server.");
+                        Status = "No response received from the privacyIDEA server, please check your connection.";
+                        return;
+                    }
+
+                    if (response!.RolloutState == "pending")
+                    {
+                        // Save the data to re-try later
+                        PIPendingCertificateRequest pendingRequest = new(slot, CurrentDevice.Serial(), CurrentDevice.ManufacturerName(), subjectName, response.Serial, data.CSR);
+                        _PersistenceService.SaveCSR(pendingRequest);
+                        Log("Saved pending request.");
+                        Status = "Certificate submission successful. The status is pending, check back later.";
+                        CheckForPendingCSR();
                     }
                     else
                     {
-                        Status = "Importing the Certificate failed!";
-                        Log("Import failed!");
+                        // TODO check rollout state?
+                        string? certStr = response!.Certificate;
+                        // TODO check error
+                        if (string.IsNullOrEmpty(certStr))
+                        {
+                            Log("No Cert received!");
+                            Status = "Response from PI did not contain a certificate!";
+                            return;
+                        }
+
+                        X509Certificate2? cert = CertUtil.ExtractCertificateFromResponse(certStr);
+                        if (cert is not null)
+                        {
+                            success = CurrentDevice.ImportCertificate(slot, cert);
+                            if (success)
+                            {
+                                Log("Import successful!");
+                                Status = "Imported the certificate successfully!";
+                                await LoadSlot(slot);
+                                _PendingCSRForSlot = null;
+                                ShowCheckPendingBtn = false;
+                                PendingRolloutText = null;
+                            }
+                            else
+                            {
+                                Status = "Importing the Certificate failed!";
+                                Log("Import failed!");
+                            }
+                        }
                     }
+                }
+                else
+                {
+                    Error("PrivacyIDEA setup is not complete. Unable to enroll certificate.");
                 }
             }
             else
             {
-                Log("PrivacyIDEA setup is not complete. Cannot enroll certificate.");
+                Error("Failed to generate CSR.");
             }
         }
 
@@ -616,12 +701,12 @@ namespace PISmartcardClient.ViewModels
 
         public void PIError(string message)
         {
-            Log(message);
+            Error(message);
         }
 
         public void PIError(Exception exception)
         {
-            Log(exception);
+            Error(exception);
         }
         #endregion
     }

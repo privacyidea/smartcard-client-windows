@@ -24,6 +24,8 @@ namespace PIVBase
         public void Disconnect();
         public bool ChangePIN();
         public bool ChangePUK();
+
+        // TODO might be yubikey specific -> remove
         public bool ChangeManagementKey();
     }
 }

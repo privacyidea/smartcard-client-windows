@@ -1,18 +1,18 @@
-﻿<Window x:Class="PISmartcardClient.Windows.ActionPrompt"
+﻿<Window x:Class="PISmartcardClient.Windows.ConfirmationPrompt"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodels="clr-namespace:PISmartcardClient.ViewModels"
-        d:DataContext="{d:DesignInstance Type=viewmodels:ActionPromptVM}"
+        d:DataContext="{d:DesignInstance Type=viewmodels:ConfirmationPromptVM}"
         mc:Ignorable="d"
-        x:Name="ActionPromptWdw"
+        x:Name="ConfirmationPromptWdw"
         Style="{StaticResource PromptWindow}"
         WindowStartupLocation="CenterOwner"
-        Title="ActionPrompt" Height="200" Width="400">
+        Title="ConfirmationPrompt" Height="200" Width="400">
 
     <Window.InputBindings>
-        <KeyBinding Command="{Binding BtnOK}" CommandParameter="{Binding ElementName=ActionPromptWdw}" Key="Enter"/>
+        <KeyBinding Command="{Binding BtnOK}" CommandParameter="{Binding ElementName=ConfirmationPromptWdw}" Key="Enter"/>
     </Window.InputBindings>
 
     <Grid>
@@ -24,10 +24,14 @@
         <TextBlock Grid.Row="0" Text="{Binding Message}"
                TextWrapping="Wrap" TextAlignment="Center" FontWeight="DemiBold" FontSize="16"
                Width="360" Height="auto" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5"/>
+        
+        <WrapPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"> 
+            <Button Content="Cancel" Command="{Binding BtnCancel}" CommandParameter="{Binding ElementName=ConfirmationPromptWdw}"
+                    Visibility="{Binding ShowCancel, Converter={StaticResource BoolToVis}}"
+                    Margin="0,0,50,0" Width="80" Height="30"/>
 
-        <Button Grid.Row="1" Content="OK" Command="{Binding BtnOK}" CommandParameter="{Binding ElementName=ActionPromptWdw}"
-                VerticalAlignment="Center" HorizontalAlignment="Center"
-                Width="80" Height="30"/>
-
+            <Button Content="OK" Command="{Binding BtnOK}" CommandParameter="{Binding ElementName=ConfirmationPromptWdw}"
+                    Width="80" Height="30"/>
+        </WrapPanel>
     </Grid>
 </Window>

@@ -8,7 +8,7 @@
         Style="{StaticResource PromptWindow}"
         Title="{Binding Title}"
         Height="200" Width="450"
-        d:DataContext="{d:DesignInstance Type=viewmodels:PromptVM}"
+        d:DataContext="{d:DesignInstance Type=viewmodels:ConfirmationPromptVM}"
         x:Name="PromptWindow"
         WindowStartupLocation="CenterOwner">
 

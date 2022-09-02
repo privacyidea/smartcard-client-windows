@@ -14,9 +14,8 @@ namespace Tests
     [TestClass]
     public class PersistenceTest
     {
-        private readonly string PENDING_DIRECTORY = @"C:\Program Files\PrivacyIDEA PIV Enrollment\Pending\";
+        private readonly string PENDING_DIRECTORY = @"C:\Program Files\PrivacyIDEA Smartcard Client\Pending\";
         private IPersistenceService _PersistenceService = new PersistenceService();
-        private string tooLongString = Get250CharString();
 
         [TestCleanup]
         public void ClearPendingDirectory()
@@ -33,7 +32,9 @@ namespace Tests
         public void WriteReadRemoveTest()
         {
             string username = "testUser";
-            string serial = "TESTSERIAL001";
+            string tokenSerial = "TESTSERIAL001";
+            string deviceSerial = "263423421";
+            string deviceManufacturer = "TestDeviceManufacturer";
             var slot = PIVSlot.Authentication;
 
             var csrCert = TestCertUtil.SelfSignedCert("CSRCert");
@@ -41,7 +42,7 @@ namespace Tests
             string csrString = CertUtil.FormatCertBytesForFile(csrCert.RawData, true);
             string attString = CertUtil.FormatCertBytesForFile(attCert.RawData);
 
-            PICertificateRequestData data = new(slot, serial, username, csrString, attString);
+            PIPendingCertificateRequest data = new(slot, deviceSerial, deviceManufacturer, username, tokenSerial, csrString);
 
             bool res = _PersistenceService.SaveCSR(data);
             res.Should().BeTrue();
@@ -51,10 +52,10 @@ namespace Tests
 
             var loadedData = loadedList[0];
             loadedData.User.Should().Be(username);
-            loadedData.Attestation.Should().Be(attString);
-            loadedData.CSR.Should().Be(csrString);
+            loadedData.DeviceSerial.Should().Be(deviceSerial);
+            loadedData.CertificateRequest.Should().Be(csrString);
             loadedData.Slot.Should().Be(slot);
-            loadedData.DeviceSerial.Should().Be(serial);
+            loadedData.TokenSerial.Should().Be(tokenSerial);
             loadedData.CreationTime.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(10));
 
             res = _PersistenceService.Remove(loadedData);
@@ -67,8 +68,8 @@ namespace Tests
         [TestMethod]
         public void RemoveDataFailure()
         {
-            PICertificateRequestData data = new(PIVSlot.Authentication, "serial", tooLongString, "csr", "att");
-            // Try to remove a file that with a too long path
+            // Try to remove a file that with a too long path, the path is PENDING_DIRECTORY + user
+            PIPendingCertificateRequest data = new(PIVSlot.Authentication, "deviceSerial", "deviceManufacturer", user: Get250CharString(), "tokenSerial", "csr");
             bool res = _PersistenceService.Remove(data);
             res.Should().BeFalse();
         }
@@ -94,7 +95,7 @@ namespace Tests
         public void SaveDataTriggerLengthException()
         {
             // Cause a PathTooLongException with a path that is >250 chars
-            PICertificateRequestData data = new(PIVSlot.Authentication, "serial", Get250CharString(), "csr", "att");
+            PIPendingCertificateRequest data = new(PIVSlot.Authentication, "deviceSerial", "deviceManufacturer", Get250CharString(), "tokenSerial", "certificateRequest");
 
             bool res = _PersistenceService.SaveCSR(data);
 
@@ -119,7 +120,7 @@ namespace Tests
         public void ExportCertFailure()
         {
             var cert = TestCertUtil.SelfSignedCert("test");
-            string path = PENDING_DIRECTORY + tooLongString + "\\test.pem";
+            string path = PENDING_DIRECTORY + Get250CharString() + "\\test.pem";
 
             bool res = _PersistenceService.ExportCertificate(cert, path);
             res.Should().BeFalse();
@@ -131,7 +132,7 @@ namespace Tests
             StringBuilder sb = new();
             for (int i = 0; i < 250; i++)
             {
-                sb.Append("a");
+                sb.Append('a');
             }
             return sb.ToString();
         }

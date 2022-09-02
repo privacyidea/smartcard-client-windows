@@ -44,7 +44,7 @@ namespace YubiKeyPIV
         private CngKey BuildRSAKey(Tlv tlv)
         {
             // TLV of a RSA Key (YubiKey encoding)
-            // 7F49 L1 { 81 length modulus || 82 length public exponent
+            // 7F49 L1 { 81 length modulus || 82 length public exponent }
             IEnumerable<byte> keyData = tlv.Value;
 
             IEnumerable<byte> keyLengthRSA2048 = new byte[] { 0x00, 0x08, 0x00, 0x00 }; // 256 byte
@@ -194,23 +194,23 @@ namespace YubiKeyPIV
             catch (ArgumentException arge)
             {
                 Log("The certificate argument is null");
-                Log(arge);
+                Error(arge);
             }
             catch (InvalidOperationException ive)
             {
                 Log("There is no KeyCollector loaded, the key provided was not a valid Triple-DES key," +
                     " or the YubiKey had some other error, such as unreliable connection.");
-                Log(ive);
+                Error(ive);
             }
             catch (OperationCanceledException oce)
             {
                 Log("The user canceled management key collection.");
-                Log(oce);
+                Error(oce);
             }
             catch (System.Security.SecurityException se)
             {
                 Log("Mutual authentication was performed and the YubiKey was not authenticated.");
-                Log(se);
+                Error(se);
             }
             return ret;
         }
@@ -235,7 +235,7 @@ namespace YubiKeyPIV
                 {
                     _Session.Dispose();
                 }
-                catch (Yubico.PlatformInterop.SCardException e)
+                catch (Yubico.PlatformInterop.SCardException)
                 {
                     Log("YubiKey was removed before session could be closed!");
                 }
@@ -327,7 +327,7 @@ namespace YubiKeyPIV
                 // The YubiKey is pre-4.3, or there is no attestation certificate,
                 // or it could not complete the task for some reason such as unreliable connection.
                 // Also TLV exception possible if the AttestationCert has been replaced.
-                Log(ioe);
+                Error(ioe);
             }
             return cert;
         }
@@ -389,7 +389,6 @@ namespace YubiKeyPIV
             Log("YK GetCertificate for slot " + slot.ToString("G"));
             EnsurePivSession();
             X509Certificate2 cert = null;
-            Thread.Sleep(2000);
             try
             {
                 cert = _Session.GetCertificate(YKPIVSlotMap.Map[slot]);
@@ -397,7 +396,7 @@ namespace YubiKeyPIV
             catch (ArgumentException ae)
             {
                 Log("The slot specified is not valid for getting a certificate.");
-                Log(ae);
+                Error(ae);
             }
             catch (InvalidOperationException)
             {
