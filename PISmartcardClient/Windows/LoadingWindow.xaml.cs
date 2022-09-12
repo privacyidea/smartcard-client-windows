@@ -7,18 +7,13 @@ namespace PISmartcardClient.Windows
     /// <summary>
     /// Interaction logic for LoadingWindow.xaml
     /// </summary>
-    public partial class LoadingWindow : Window, ICloseableWindow
+    public partial class LoadingWindow : Window
     {
         public LoadingWindow()
         {
             InitializeComponent();
             Owner = App.Current.MainWindow;
             DataContext = App.Current.Services.GetService<LoadingVM>();
-        }
-
-        public void CloseWindow()
-        {
-            Close();
         }
     }
 }

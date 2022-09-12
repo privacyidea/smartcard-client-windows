@@ -93,7 +93,7 @@
         <!-- CENTER INFO GRID -->
         <Grid Grid.Column="1" Name="CenterGrid"
               VerticalAlignment="Top" HorizontalAlignment="Center" 
-              Height="253" Width="534"
+              Height="253" Width="570"
               Margin="0,150,0,0" Visibility="{Binding ShowCenterGrid, Converter={StaticResource BoolToVis}}">
 
             <Grid.ColumnDefinitions>
@@ -176,7 +176,7 @@
                    Text="{Binding PendingRolloutText}" Visibility="{Binding ShowCheckPendingBtn, Converter={StaticResource BoolToVis}}"
                    TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Width="300"/>
         </WrapPanel>
-        
+
         <TextBlock Text="{Binding Status}" Grid.Row="1" Grid.Column="1"
                    TextAlignment="Center" TextWrapping="Wrap"
                    MaxWidth="700" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"
@@ -206,7 +206,7 @@
                     Style="{StaticResource MainButton}"
                     FontWeight="DemiBold" FontSize="16"/>
         </WrapPanel>
-            
+
         <!-- DEVICE SELECTION CONTROLS -->
         <ComboBox Grid.Column="1" Width="400" Height="35" Margin="0,23,0,0" Name="DevicesCB"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
@@ -231,5 +231,9 @@
 
         <Rectangle HorizontalAlignment="Left" Height="2" Stroke="DarkGray" 
                    VerticalAlignment="Top" Width="1026" Grid.Row="1" Grid.ColumnSpan="1"/>
+
+        <Label Content="Certificate Slots" HorizontalAlignment="Center" Margin="0,120,0,0" VerticalAlignment="Top" FontSize="18" FontWeight="Bold"/>
+        <Rectangle HorizontalAlignment="Left" Height="2" Stroke="DarkGray" 
+                   VerticalAlignment="Top" Width="1000" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="1" Margin="10,152,10,0"/>
     </Grid>
 </Window>

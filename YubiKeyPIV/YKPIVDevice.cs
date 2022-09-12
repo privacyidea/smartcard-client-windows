@@ -16,7 +16,7 @@ namespace YubiKeyPIV
     public sealed class YKPIVDevice : IPIVDevice, IDisposable
     {
         private readonly IYubiKeyDevice _YK;
-        private PivSession _Session;
+        private PivSession? _Session;
         private Func<KeyEntryData, bool> _KeyCollector;
         private readonly string _Manufacturer = "Yubico";
         private readonly string _DeviceType = "YubiKey";
@@ -27,13 +27,10 @@ namespace YubiKeyPIV
         {
             _YK = yubiKey;
             _KeyCollector = keyCollector;
-
-            if (_YK.SerialNumber is not null)
-            {
-                _Serial = Convert.ToString(_YK.SerialNumber);
-            }
+            _Serial = Convert.ToString(_YK.SerialNumber ?? 0);
             _DeviceVersion = _YK.FirmwareVersion.ToString();
         }
+
         string IPIVDevice.ManufacturerName() => _Manufacturer;
         string IPIVDevice.DeviceType() => _DeviceType;
         string IPIVDevice.DeviceVersion() => _DeviceVersion;
@@ -41,7 +38,7 @@ namespace YubiKeyPIV
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility",
                                                          Justification = "Target is Windows only")]
-        private CngKey BuildRSAKey(Tlv tlv)
+        private CngKey? BuildRSAKey(Tlv tlv)
         {
             // TLV of a RSA Key (YubiKey encoding)
             // 7F49 L1 { 81 length modulus || 82 length public exponent }
@@ -53,7 +50,7 @@ namespace YubiKeyPIV
 
             IEnumerable<byte> toImport = Values.BCRYPT_RSAPUBLIC_MAGIC.Concat(keyLengthRSA2048).Concat(moreMagic).Concat(keyData);
             byte[] keyBlob = toImport.ToArray();
-            CngKey cngKey = null;
+            CngKey? cngKey = null;
             try
             {
                 cngKey = CngKey.Import(keyBlob, format: CngKeyBlobFormat.GenericPublicBlob);
@@ -67,7 +64,7 @@ namespace YubiKeyPIV
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility",
                                                          Justification = "Target is Windows only")]
-        private CngKey BuildEccKey(Tlv tlv, PivAlgorithm pivAlgorithm)
+        private CngKey? BuildEccKey(Tlv tlv, PivAlgorithm pivAlgorithm)
         {
             // TLV of an ECC Key (YubiKey encoding)
             // 7F49 L1 { 86 length public point }
@@ -91,7 +88,7 @@ namespace YubiKeyPIV
 
             toImport = toImport.Concat(keyData);
 
-            CngKey cngKey = null;
+            CngKey? cngKey = null;
             try
             {
                 byte[] keyBlob = toImport.ToArray();
@@ -104,7 +101,7 @@ namespace YubiKeyPIV
             return cngKey;
         }
 
-        private Tlv ParseTLVEncodedData(byte[] ba)
+        private static Tlv? ParseTLVEncodedData(byte[] ba)
         {
             try
             {
@@ -118,12 +115,12 @@ namespace YubiKeyPIV
             return null;
         }
 
-        private PivPublicKey GenerateKeyPair(byte pivSlot, PivAlgorithm pivAlgorithm)
+        private PivPublicKey? GenerateKeyPair(byte pivSlot, PivAlgorithm pivAlgorithm)
         {
-            PivPublicKey publicKey = null;
+            PivPublicKey? publicKey = null;
             try
             {
-                publicKey = _Session.GenerateKeyPair(pivSlot, pivAlgorithm);
+                publicKey = _Session!.GenerateKeyPair(pivSlot, pivAlgorithm);
             }
             catch (ArgumentException arge)
             {
@@ -150,10 +147,10 @@ namespace YubiKeyPIV
             return publicKey;
         }
 
-        private CngKey PivPublicKeyToCngKey(PivPublicKey pivPublicKey, PivAlgorithm algorithm)
+        private CngKey? PivPublicKeyToCngKey(PivPublicKey pivPublicKey, PivAlgorithm algorithm)
         {
             Log("YK PivPublicKeyToCngKey...");
-            CngKey cngKey = null;
+            CngKey? cngKey = null;
             // YubiKey encoding does NOT have the nested TLV tag and is therefore 2 bytes shorter than PIV encoding
             var tlv = ParseTLVEncodedData(pivPublicKey.YubiKeyEncodedPublicKey.ToArray());
 
@@ -188,7 +185,7 @@ namespace YubiKeyPIV
             bool ret = false;
             try
             {
-                _Session.ImportCertificate(YKPIVSlotMap.Map[slot], certificate);
+                _Session!.ImportCertificate(YKPIVSlotMap.Map[slot], certificate);
                 ret = true;
             }
             catch (ArgumentException arge)
@@ -217,7 +214,7 @@ namespace YubiKeyPIV
 
         private void EnsurePivSession()
         {
-            if (_Session == null)
+            if (_Session is null)
             {
                 _Session = new(_YK)
                 {
@@ -244,7 +241,7 @@ namespace YubiKeyPIV
             }
         }
 
-        CngKey IPIVDevice.GenerateNewKeyInSlot(PIVSlot slot, PIVAlgorithm algorithm)
+        CngKey? IPIVDevice.GenerateNewKeyInSlot(PIVSlot slot, PIVAlgorithm algorithm)
         {
             Log("YK GenerateNewKeyInSlot for slot " + slot.ToString("G") + ", algorithm: " + algorithm);
             EnsurePivSession();
@@ -259,7 +256,7 @@ namespace YubiKeyPIV
                 return null;
             }
 
-            PivPublicKey pivPublicKey = GenerateKeyPair(YKPIVSlotMap.Map[slot], pivAlgorithm);
+            PivPublicKey? pivPublicKey = GenerateKeyPair(YKPIVSlotMap.Map[slot], pivAlgorithm);
             if (pivPublicKey is null)
             {
                 Log("YK Generating " + algorithm.ToString("G") + " Key in slot " + slot.ToString("G") + " failed!");
@@ -268,9 +265,13 @@ namespace YubiKeyPIV
 
             // The data of PivPublicKey is TLV encoded and has to be manipulated
             // to be able to import it into a CngKey object.
-            CngKey cngKey = null;
-            Tlv tlv = ParseTLVEncodedData(pivPublicKey.YubiKeyEncodedPublicKey.ToArray());
-            if (tlv == null) return null;
+            CngKey? cngKey = null;
+            Tlv? tlv = ParseTLVEncodedData(pivPublicKey.YubiKeyEncodedPublicKey.ToArray());
+            if (tlv is null)
+            {
+                Error("Unable to parse TLV of yubikey encoded public key!");
+                return null;
+            }
 
             if (pivAlgorithm is PivAlgorithm.EccP256 or PivAlgorithm.EccP384)
             {
@@ -288,13 +289,13 @@ namespace YubiKeyPIV
             return cngKey;
         }
 
-        public byte[] Sign(byte[] data, PIVSlot slot)
+        public byte[]? Sign(byte[] data, PIVSlot slot)
         {
             EnsurePivSession();
-            byte[] ret = null;
+            byte[]? ret = null;
             try
             {
-                ret = _Session.Sign(YKPIVSlotMap.Map[slot], data);
+                ret = _Session!.Sign(YKPIVSlotMap.Map[slot], data);
             }
             catch (ArgumentException ae)
             {
@@ -312,14 +313,14 @@ namespace YubiKeyPIV
             return ret;
         }
 
-        X509Certificate2 IPIVDevice.GetRootAttestationCertificate()
+        X509Certificate2? IPIVDevice.GetRootAttestationCertificate()
         {
             Log("YK GetAttestationCertificate...");
             EnsurePivSession();
-            X509Certificate2 cert = null;
+            X509Certificate2? cert = null;
             try
             {
-                cert = _Session.GetAttestationCertificate();
+                cert = _Session!.GetAttestationCertificate();
                 Log("YK Received Attestation Cert.");
             }
             catch (InvalidOperationException ioe)
@@ -332,21 +333,21 @@ namespace YubiKeyPIV
             return cert;
         }
 
-        PIVSlotInfo IPIVDevice.GetSlotInfo(PIVSlot slot)
+        PIVSlotInfo? IPIVDevice.GetSlotInfo(PIVSlot slot)
         {
             Log("YK GetSlotInfo...");
             EnsurePivSession();
 
             if (_YK.FirmwareVersion < new FirmwareVersion(5, 3, 0))
             {
-                Log("YubiKey Firmware version is lower than 5.3.0. Version: " + _YK.FirmwareVersion.ToString());
+                Error($"YubiKey Firmware version is lower than 5.3.0. Actual version: {_YK.FirmwareVersion}. This fireware does not support getting information about slots.");
                 return null;
             }
 
             PivMetadata meta;
             try
             {
-                meta = _Session.GetMetadata(YKPIVSlotMap.Map[slot]);
+                meta = _Session!.GetMetadata(YKPIVSlotMap.Map[slot]);
             }
             catch (ArgumentException)
             {
@@ -360,8 +361,8 @@ namespace YubiKeyPIV
                 return null;
             }
 
-            PivPublicKey pivPublicKey = null;
-            CngKey cngKey = null;
+            PivPublicKey? pivPublicKey = null;
+            CngKey? cngKey = null;
             try
             {
                 pivPublicKey = PivPublicKey.Create(meta.PublicKey.YubiKeyEncodedPublicKey);
@@ -376,6 +377,11 @@ namespace YubiKeyPIV
                 cngKey = PivPublicKeyToCngKey(pivPublicKey, meta.Algorithm);
             }
 
+            if (cngKey is null)
+            {
+                Log($"Unable to get public key for slot {slot:G}");
+                return null;
+            }
             YKPIVSlotInfo ykInfo = new(slot,
                                        meta.KeyStatus == PivKeyStatus.Default,
                                        YKPIVAlgorithmMap.reverse[meta.Algorithm],
@@ -384,14 +390,14 @@ namespace YubiKeyPIV
             return ykInfo;
         }
 
-        X509Certificate2 IPIVDevice.GetCertificate(PIVSlot slot)
+        X509Certificate2? IPIVDevice.GetCertificate(PIVSlot slot)
         {
             Log("YK GetCertificate for slot " + slot.ToString("G"));
             EnsurePivSession();
-            X509Certificate2 cert = null;
+            X509Certificate2? cert = null;
             try
             {
-                cert = _Session.GetCertificate(YKPIVSlotMap.Map[slot]);
+                cert = _Session!.GetCertificate(YKPIVSlotMap.Map[slot]);
             }
             catch (ArgumentException ae)
             {
@@ -407,15 +413,15 @@ namespace YubiKeyPIV
             return cert;
         }
 
-        X509Certificate2 IPIVDevice.GetAttestationForSlot(PIVSlot slot)
+        X509Certificate2? IPIVDevice.GetAttestationForSlot(PIVSlot slot)
         {
             Log("GetAttestationForSlot " + slot.ToString("G"));
             EnsurePivSession();
-            X509Certificate2 ret = null;
+            X509Certificate2? ret = null;
 
             try
             {
-                ret = _Session.CreateAttestationStatement(YKPIVSlotMap.Map[slot]);
+                ret = _Session!.CreateAttestationStatement(YKPIVSlotMap.Map[slot]);
                 Log("Attestation received.");
             }
             catch (ArgumentException)
@@ -446,7 +452,7 @@ namespace YubiKeyPIV
             EnsurePivSession();
             try
             {
-                return _Session.TryChangePin();
+                return _Session!.TryChangePin();
             }
             catch (Exception e)
             {
@@ -460,7 +466,7 @@ namespace YubiKeyPIV
             EnsurePivSession();
             try
             {
-                return _Session.TryChangePuk();
+                return _Session!.TryChangePuk();
             }
             catch (Exception e)
             {
@@ -474,7 +480,7 @@ namespace YubiKeyPIV
             EnsurePivSession();
             try
             {
-                return _Session.TryChangeManagementKey();
+                return _Session!.TryChangeManagementKey();
             }
             catch (Exception e)
             {

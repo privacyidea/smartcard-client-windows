@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace PIVBase
 {
@@ -34,13 +33,12 @@ namespace PIVBase
         {
             StringBuilder sb = new();
             string s = input;
-            string tmp = "";
             int count = 0;
             while (true)
             {
                 try
                 {
-                    tmp = s.Substring(count * period, period);
+                    string tmp = s.Substring(count * period, period);
                     sb.Append(tmp).Append(insertion);
                     count++;
                 }
@@ -55,6 +53,11 @@ namespace PIVBase
 
         public static string ByteArrayToHexString(byte[] ba, bool dashed = false)
         {
+            if (ba == null)
+            {
+                return "";
+            }
+
             string ret = BitConverter.ToString(ba);
             if (!dashed)
             {
@@ -88,7 +91,7 @@ namespace PIVBase
 
         private static string Prefix()
         {
-            return $"[{Thread.CurrentThread.ManagedThreadId}][{DateTime.UtcNow:yyyy-MM-dd HH\\:mm\\:ss}] ";
+            return $"[{Environment.CurrentManagedThreadId}][{DateTime.UtcNow:yyyy-MM-dd HH\\:mm\\:ss}] ";
         }
 
         public static void WriteToFile(string msg)

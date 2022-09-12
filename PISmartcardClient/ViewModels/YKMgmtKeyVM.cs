@@ -1,7 +1,7 @@
 ﻿using PISmartcardClient.Utilities;
-using PISmartcardClient.Windows;
 using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.Input;
+using System.Windows;
 
 namespace PISmartcardClient.ViewModels
 {
@@ -26,9 +26,9 @@ namespace PISmartcardClient.ViewModels
 
         public DelegateCommand CheckBoxCommand { get; set; }
 
-        public RelayCommand<ICloseableWindow> OK { get; set; }
+        public RelayCommand<Window> OK { get; set; }
 
-        public RelayCommand<ICloseableWindow> Cancel { get; set; }
+        public RelayCommand<Window> Cancel { get; set; }
 
         public YKMgmtKeyVM()
         {
@@ -51,14 +51,14 @@ namespace PISmartcardClient.ViewModels
             OK = new(
                 (cmdparam) =>
                 {
-                    cmdparam?.CloseWindow();
+                    cmdparam?.Close();
                 });
 
             Cancel = new(
                 (cmdparam) =>
                 {
                     Cancelled = true;
-                    cmdparam?.CloseWindow();
+                    cmdparam?.Close();
                 });
         }
     }

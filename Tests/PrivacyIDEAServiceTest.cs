@@ -2,10 +2,12 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System.Configuration;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
+
+// [TestInitialize] is not recognized as constructur so
+#pragma warning disable 8618
 
 namespace Tests
 {

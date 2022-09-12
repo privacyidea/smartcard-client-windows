@@ -14,6 +14,9 @@ using PISmartcardClient.Utilities;
 using System.Threading.Tasks;
 using PrivacyIDEAClient;
 
+// Because [TestInitalize] is not recognized as constructor
+#pragma warning disable 8618
+
 namespace Tests
 {
     [TestClass]
@@ -23,6 +26,7 @@ namespace Tests
         private Mock<IPrivacyIDEAService> _PrivacyIDEAServiceMock;
         private Mock<IDeviceService> _DeviceServiceMock;
         private Mock<IPersistenceService> _PersistenceServiceMock;
+        private Mock<ISettingsService> _SettingsServiceMock;
         private Mock<IPIVDevice> _PIVDeviceMock;
         private MainVM _VM;
         private readonly List<IPIVDevice> _DeviceList = new();
@@ -34,6 +38,8 @@ namespace Tests
             _PrivacyIDEAServiceMock = new Mock<IPrivacyIDEAService>();
             _DeviceServiceMock = new Mock<IDeviceService>();
             _PersistenceServiceMock = new Mock<IPersistenceService>();
+            _SettingsServiceMock = new Mock<ISettingsService>();
+
             // Basic device behavior
             _PIVDeviceMock = new Mock<IPIVDevice>();
             _PIVDeviceMock.Setup(d => d.DeviceType()).Returns("MockDevice");
@@ -44,8 +50,8 @@ namespace Tests
             _DeviceList.Add(_PIVDeviceMock.Object);
             _DeviceServiceMock.Setup(obj => obj.GetAllDevices()).Returns(_DeviceList);
 
-            _VM = new(_WindowServiceMock.Object, _PrivacyIDEAServiceMock.Object, _PersistenceServiceMock.Object,
-                _DeviceServiceMock.Object, new TestDispatcher());
+            _VM = new(_WindowServiceMock.Object, _PrivacyIDEAServiceMock.Object, _SettingsServiceMock.Object,
+                _PersistenceServiceMock.Object, _DeviceServiceMock.Object, new TestDispatcher());
 
             // Assign manually because ComboBox is not doing it
             _VM.SelectedDevice = new(_DeviceList[0]);
@@ -76,6 +82,7 @@ namespace Tests
             _PIVDeviceMock.Setup(d => d.GetCertificate(PIVSlot.Authentication)).Returns(cert);
 
             // Verify device is set internally
+            Assert.IsNotNull(_VM.SelectedDevice);
             _VM.SelectedDevice.Device.Should().BeSameAs(_VM.CurrentDevice);
             _VM.NoSlotOrCertText.Should().Be("Please select a slot.");
             // This is what is shown in the combo box device selection
@@ -95,7 +102,7 @@ namespace Tests
         [TestMethod]
         public void LoadEmptySlot()
         {
-            _PIVDeviceMock.Setup(d => d.GetCertificate(PIVSlot.Authentication)).Returns((X509Certificate2)null);
+            _PIVDeviceMock.Setup(d => d.GetCertificate(PIVSlot.Authentication)).Returns((X509Certificate2?)null);
 
             _VM.BtnChangeSlot.Execute("Authentication");
             Thread.Sleep(500);
@@ -113,7 +120,7 @@ namespace Tests
         {
             _PrivacyIDEAServiceMock.Setup(m => m.IsConfigured()).Returns(true);
             _PrivacyIDEAServiceMock.SetupSequence(m => m.CurrentUser())
-                                   .Returns((string)null) // First check if a user is already authenticated
+                                   .Returns((string?)null) // First check if a user is already authenticated
                                    .Returns("TestUser") // Get the user that just authenticated
                                    .Returns("TestUser"); // Get user again for logout
             _PrivacyIDEAServiceMock.Setup(m => m.DoUserAuthentication()).ReturnsAsync(true);
@@ -173,14 +180,14 @@ namespace Tests
                          "PeS43DWrXA5EHpVCVu33W4hGW1KL9HJpUOPiBxSapY6PxTU=" +
                          "\n-----END CERTIFICATE-----";
 
-            X509Certificate2 certFromResponse = CertUtil.ExtractCertificateFromResponse(strCertFromResponse);
+            X509Certificate2? certFromResponse = CertUtil.ExtractCertificateFromResponse(strCertFromResponse);
             PIResponse piResponse = new()
             {
                 Certificate = strCertFromResponse
             };
 
             _PIVDeviceMock.SetupSequence(m => m.GetCertificate(PIVSlot.Authentication))
-                           .Returns((X509Certificate2)null) // when loading first time
+                           .Returns((X509Certificate2?)null) // when loading first time
                            .Returns(certFromResponse); // after importing
 
             _PIVDeviceMock.Setup(m => m.GenerateNewKeyInSlot(PIVSlot.Authentication, PIVAlgorithm.EccP256))
@@ -198,7 +205,7 @@ namespace Tests
             _PrivacyIDEAServiceMock.Setup(m => m.CurrentUser()).Returns("TestUser");
             _PrivacyIDEAServiceMock.Setup(m => m.IsConfigured()).Returns(true);
             _PrivacyIDEAServiceMock.Setup(m => m.SendCSR(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                                   .Returns(Task.FromResult(piResponse));
+                                   .Returns(Task.FromResult<PIResponse?>(piResponse));
 
             // Select slot authentication which is currently empty
             _VM.BtnChangeSlot.Execute("Authentication");

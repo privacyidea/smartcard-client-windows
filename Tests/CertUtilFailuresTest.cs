@@ -3,9 +3,10 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using PIVBase;
-using System;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
+
+// [TestInitialize] is not recognized as constructur so
+#pragma warning disable 8618
 
 namespace Tests
 {
@@ -23,7 +24,7 @@ namespace Tests
         [TestMethod]
         public void CreateCSRGenerationFailure()
         {
-            _DeviceMock.Setup(m => m.GenerateNewKeyInSlot(PIVSlot.Authentication, PIVAlgorithm.EccP256)).Returns((CngKey)null);
+            _DeviceMock.Setup(m => m.GenerateNewKeyInSlot(PIVSlot.Authentication, PIVAlgorithm.EccP256)).Returns((CngKey?)null);
             var ret = CertUtil.CreateCSRData(_DeviceMock.Object, "testUser", PIVAlgorithm.EccP256, PIVSlot.Authentication);
             ret.Should().BeNull();
         }

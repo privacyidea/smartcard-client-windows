@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using System.Text;
 using PIVBase;
 using Yubico.YubiKey;
@@ -32,53 +33,85 @@ namespace PISmartcardClient
             return foundDevices;
         }
 
-        private (bool success, string? oldPIN, string? newPIN) GetPINorPUKForChangeYubiKey(KeyEntryData keyEntryData, bool isPUK = false)
+
+        /// <summary>
+        /// Show a prompt for input until the input matches the contraints or the operation is cancelled.
+        /// The input has to be non-empty and 6-8 characters long. The label for the input is configurable so it can be used for the PUK aswell.
+        /// The PUK contraints are the same as for the PIN (for yubikeys)
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="inputLabel"></param>
+        /// <param name="retries"></param>
+        /// <returns></returns>
+        public (bool success, string? pin) GetYubikeyPIN(string message, string inputLabel, int? retries = null)
         {
-            // Get the current PIN or PUK first
-            string pinOrPuk = isPUK ? "PUK" : "PIN";
-            string message = string.Format("Please enter your current {0}!", pinOrPuk);
-            if (keyEntryData.IsRetry)
-            {
-                message = string.Format("Wrong {0}! Retries remaining: ", pinOrPuk) + keyEntryData.RetriesRemaining + "\n" + message;
-            }
-
-            (bool success, string? pin1, string? pin2) = _WindowService.PinPrompt(message, string.Format("{0}:", pinOrPuk), null);
-
-            if (!success)
-            {
-                return (false, null, null);
-            }
-            string currentPIN = pin1!;
-
-            // Get the new PIN or PUK and enforce the contstraints for it
-            string defaultMessage = string.Format("Please enter a new {0} (6-8 Characters).", pinOrPuk);
-            message = defaultMessage;
-            string newPIN;
             while (true)
             {
-                (success, pin1, pin2) = _WindowService.PinPrompt(message,
-                                                                 string.Format("New {0}:", pinOrPuk),
-                                                                 string.Format("Repeat new {0}:", pinOrPuk));
+                if (retries is int r)
+                {
+                    message += $"\n({r} retries remaining)";
+                }
+
+                (bool success, string? pin, _) = _WindowService.PinPrompt(message, inputLabel);
+
                 if (!success)
                 {
-                    // Cancel the whole operation on the YubiKey
-                    return (false, null, null);
+                    Log("PIN prompt cancelled by user");
+                    return (false, null);
                 }
-                else if (pin1 != pin2 || (string.IsNullOrEmpty(pin1) && string.IsNullOrEmpty(pin2)))
+                else if (pin is null)
                 {
-                    message = string.Format("The {0}s must match and cannot be emtpy!\n", pinOrPuk) + defaultMessage;
+                    message = $"The PIN can not be empty!\n{message}";
                 }
-                else if (pin1!.Length is < 6 or > 8 || pin2!.Length is < 6 or > 8)
+                else if (pin!.Length is < 6 or > 8)
                 {
-                    message = string.Format("The {0} must match the length constraint!\n", pinOrPuk) + defaultMessage;
+                    message = $"The PIN has to be 6, 7 or 8 characters long!\n{message}";
                 }
                 else
                 {
-                    newPIN = pin1!;
-                    break;
+                    return (true, pin);
                 }
             }
-            return (true, currentPIN, newPIN);
+        }
+
+        public (bool success, string? oldValue, string? newValue) ChangePINorPUK(bool isPUK = false)
+        {
+            string insert = isPUK ? "PUK" : "PIN";
+
+            (bool success, string? oldPIN) = GetYubikeyPIN($"Please enter your old {insert} first!", $"{insert}:");
+            if (!success)
+            {
+                Log("Operation cancelled!");
+                return (false, null, null);
+            }
+            string? newPIN1;
+            string message = $"Please enter the new {insert}!";
+            while (true)
+            {
+                (success, newPIN1) = GetYubikeyPIN(message, $"New {insert}:");
+                if (!success)
+                {
+                    Log("Operation cancelled!");
+                    return (false, null, null);
+                }
+
+                (success, string? newPIN2) = GetYubikeyPIN($"Please repeat the new {insert}!", $"New {insert}:");
+                if (!success)
+                {
+                    Log("Operation cancelled!");
+                    return (false, null, null);
+                }
+
+                if (newPIN1 == newPIN2)
+                {
+                    break;
+                }
+                else
+                {
+                    message = $"The new {insert}s did not match!\n{message}";
+                }
+            }
+            return (true, oldPIN, newPIN1);
         }
 
         public bool KeyCollector(KeyEntryData keyEntryData)
@@ -88,7 +121,7 @@ namespace PISmartcardClient
             if (keyEntryData.IsRetry)
             {
                 var retriesRemaining = keyEntryData.RetriesRemaining;
-                Log("is retry with" + retriesRemaining + " tries remaining");
+                Log($"is retry with {retriesRemaining} tries remaining");
             }
 
             // Returning false cancels the operation on the yubikey
@@ -105,43 +138,34 @@ namespace PISmartcardClient
                     string message = "Please enter your PIN!";
                     if (keyEntryData.IsRetry)
                     {
-                        message = "Wrong PIN! Retries remaining: " + keyEntryData.RetriesRemaining + "\n" + message;
+                        message = $"Wrong PIN! Retries remaining: {keyEntryData.RetriesRemaining}\n{message}";
                     }
 
-                    (bool success, string? pin1, string? _) = _WindowService.PinPrompt(message, "PIN:", null);
+                    (bool success, string? pin) = GetYubikeyPIN(message, "PIN:");
                     if (!success)
                     {
                         Log("Operation cancelled!");
                         return false;
                     }
-                    if (pin1 is null)
-                    {
-                        throw new InvalidOperationException("PIN should not be empty!");
-                    }
 
-                    ReadOnlySpan<byte> pinSpan = Encoding.ASCII.GetBytes(pin1!);
+                    ReadOnlySpan<byte> pinSpan = Encoding.ASCII.GetBytes(pin!);
                     keyEntryData.SubmitValue(pinSpan);
                     break;
                 }
                 case KeyEntryRequest.ChangePivPin:
                 {
                     Log("...Change PIV PIN");
-                    (bool success, string? oldPIN, string? newPIN) = GetPINorPUKForChangeYubiKey(keyEntryData);
-                    if (!success)
-                    {
-                        Log("Operation cancelled!");
-                        return false;
-                    }
-                    if (newPIN is null || oldPIN is null)
-                    {
-                        throw new InvalidOperationException("Cannot change PIN to emtpy value!");
-                    }
 
-                    ReadOnlySpan<byte> spanOldPIN = Encoding.ASCII.GetBytes(oldPIN);
-                    ReadOnlySpan<byte> spanNewPIN = Encoding.ASCII.GetBytes(newPIN);
+                    (bool success, string? oldPIN, string? newPIN) = ChangePINorPUK();
+                    if (success)
+                    {
+                        ReadOnlySpan<byte> spanOldPIN = Encoding.ASCII.GetBytes(oldPIN!);
+                        ReadOnlySpan<byte> spanNewPIN = Encoding.ASCII.GetBytes(newPIN!);
 
-                    keyEntryData.SubmitValues(spanOldPIN, spanNewPIN);
-                    break;
+                        keyEntryData.SubmitValues(spanOldPIN, spanNewPIN);
+                        break;
+                    }
+                    return false;
                 }
                 case KeyEntryRequest.ResetPivPinWithPuk:
                 {
@@ -151,35 +175,29 @@ namespace PISmartcardClient
                 case KeyEntryRequest.ChangePivPuk:
                 {
                     Log("... ChangePivPuk");
-                    (bool success, string? oldPUK, string? newPUK) = GetPINorPUKForChangeYubiKey(keyEntryData, true);
-                    if (!success)
+                    (bool success, string? oldPUK, string? newPUK) = ChangePINorPUK(true);
+                    if (success)
                     {
-                        // Cancel operation on YubiKey
-                        return false;
-                    }
-                    if (newPUK is null || oldPUK is null)
-                    {
-                        throw new InvalidOperationException("Cannot change PUK to emtpy value!");
-                    }
+                        ReadOnlySpan<byte> spanOldPUK = Encoding.ASCII.GetBytes(oldPUK!);
+                        ReadOnlySpan<byte> spanNewPUK = Encoding.ASCII.GetBytes(newPUK!);
 
-                    ReadOnlySpan<byte> spanOldPUK = Encoding.ASCII.GetBytes(oldPUK);
-                    ReadOnlySpan<byte> spanNewPUK = Encoding.ASCII.GetBytes(newPUK);
-
-                    keyEntryData.SubmitValues(spanOldPUK, spanNewPUK);
-                    break;
+                        keyEntryData.SubmitValues(spanOldPUK, spanNewPUK);
+                        break;
+                    }
+                    return false;
                 }
                 case KeyEntryRequest.AuthenticatePivManagementKey:
                 {
                     Log("...Authenticate PIV Management key");
-                    
-                    (bool success, string? managementKey) = (true, "010203040506070801020304050607080102030405060708"); //_WindowService.YubikeyMgmtKeyPrompt();
-                    if (!success)
+
+                    (_, string? managementKey) = _WindowService.YubikeyMgmtKeyPrompt();
+                    if (managementKey is not null)
                     {
-                        return false;
+                        ReadOnlySpan<byte> mgmtKeySpan = HexStringToByteArray(managementKey);
+                        keyEntryData.SubmitValue(mgmtKeySpan);
+                        break;
                     }
-                    ReadOnlySpan<byte> mgmtKeySpan = HexStringToByteArray(managementKey);
-                    keyEntryData.SubmitValue(mgmtKeySpan);
-                    break;
+                    return false;
                 }
                 case KeyEntryRequest.ChangePivManagementKey:
                 {

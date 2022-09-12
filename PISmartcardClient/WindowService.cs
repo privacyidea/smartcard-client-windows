@@ -11,6 +11,7 @@ namespace PISmartcardClient
     public class WindowService : IWindowService
     {
         private LoadingWindow? _LoadingWindow;
+
         (bool, string?) IWindowService.SimplePrompt(string? title, string message, string buttonText)
         {
             Prompt prompt = new();

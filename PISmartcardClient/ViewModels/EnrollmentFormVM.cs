@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
-using PISmartcardClient.Windows;
 using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.Input;
+using System.Windows;
 
 namespace PISmartcardClient.ViewModels
 {
@@ -17,8 +17,8 @@ namespace PISmartcardClient.ViewModels
         }
 
         public bool Cancelled { get; set; }
-        public RelayCommand<ICloseableWindow> Cancel { get; set; }
-        public RelayCommand<ICloseableWindow> OK { get; set; }
+        public RelayCommand<Window> Cancel { get; set; }
+        public RelayCommand<Window> OK { get; set; }
         public EnrollmentFormVM()
         {
             Algorithms = new()
@@ -32,10 +32,10 @@ namespace PISmartcardClient.ViewModels
                 (window) =>
                 {
                     Cancelled = true;
-                    window?.CloseWindow();
+                    window?.Close();
                 });
 
-            OK = new((window) => window?.CloseWindow());
+            OK = new((window) => window?.Close());
         }
         public void Reset()
         {

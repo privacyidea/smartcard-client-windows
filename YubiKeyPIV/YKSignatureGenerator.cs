@@ -88,15 +88,23 @@ namespace YubiKeyPIV
 
             Log("Digest=\n" + ByteArrayToHexString(digest) + "\nSize=" + digest.Length);
 
-            byte[] signature = _YK.Sign(digest, _Slot);
-            Log("Created signature:\n" + ByteArrayToHexString(signature));
+            byte[]? signature = _YK.Sign(digest, _Slot);
+            if (signature is null)
+            {
+                Error("Yubikey did not generate a signature!");
+                return Array.Empty<byte>();
+            }
+            Log($"Created signature:\n{ByteArrayToHexString(signature)}");
             return signature;
         }
 
         protected override PublicKey BuildPublicKey()
         {
             Log("BuildPublicKey");
+            // Not creating a "real" dummy public key to return here to statisfy the abstract. This method is unused anyway.
+#pragma warning disable 8603
             return null;
+#pragma warning restore
         }
     }
 }

@@ -1,7 +1,7 @@
-﻿using PISmartcardClient.Windows;
-using Microsoft.Toolkit.Mvvm.ComponentModel;
+﻿using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.Input;
 using System;
+using System.Windows;
 
 namespace PISmartcardClient.ViewModels
 {
@@ -43,8 +43,8 @@ namespace PISmartcardClient.ViewModels
 
         public bool Cancelled { get; set; }
 
-        public RelayCommand<ICloseableWindow> OK { get; set; }
-        public RelayCommand<ICloseableWindow> Cancel { get; set; }
+        public RelayCommand<Window> OK { get; set; }
+        public RelayCommand<Window> Cancel { get; set; }
         public Func<string?>? PasswordGetter { get; set; }
 
         public AuthVM()
@@ -56,13 +56,13 @@ namespace PISmartcardClient.ViewModels
                     {
                         PasswordInput = PasswordGetter();
                     }
-                    window?.CloseWindow();
+                    window?.Close();
                 });
 
             Cancel = new((window) =>
             {
                 Cancelled = true;
-                window?.CloseWindow();
+                window?.Close();
             });
         }
     }

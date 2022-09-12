@@ -9,7 +9,7 @@
         x:Name="ConfirmationPromptWdw"
         Style="{StaticResource PromptWindow}"
         WindowStartupLocation="CenterOwner"
-        Title="ConfirmationPrompt" Height="200" Width="400">
+        Title="Confirmation" Height="200" Width="400">
 
     <Window.InputBindings>
         <KeyBinding Command="{Binding BtnOK}" CommandParameter="{Binding ElementName=ConfirmationPromptWdw}" Key="Enter"/>
@@ -28,10 +28,10 @@
         <WrapPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"> 
             <Button Content="Cancel" Command="{Binding BtnCancel}" CommandParameter="{Binding ElementName=ConfirmationPromptWdw}"
                     Visibility="{Binding ShowCancel, Converter={StaticResource BoolToVis}}"
-                    Margin="0,0,50,0" Width="80" Height="30"/>
+                    Style="{StaticResource PromptButton}" Margin="0,0,50,0" Width="80" Height="30"/>
 
             <Button Content="OK" Command="{Binding BtnOK}" CommandParameter="{Binding ElementName=ConfirmationPromptWdw}"
-                    Width="80" Height="30"/>
+                    Style="{StaticResource PromptButton}" Width="80" Height="30"/>
         </WrapPanel>
     </Grid>
 </Window>

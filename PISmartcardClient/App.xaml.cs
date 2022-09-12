@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows;
-using PISmartcardClient.Model;
 using PISmartcardClient.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 

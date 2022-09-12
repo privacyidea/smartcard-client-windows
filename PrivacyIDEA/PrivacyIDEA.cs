@@ -210,7 +210,7 @@ namespace PrivacyIDEAClient
                 try
                 {
                     dynamic root = JsonConvert.DeserializeObject(response);
-                    ret = (bool)root.result.value;
+                    ret = (bool)root?.result.value;
                 }
                 catch (Exception)
                 {

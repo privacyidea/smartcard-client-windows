@@ -7,6 +7,7 @@
         WindowStartupLocation="CenterOwner"
         xmlns:viewmodels="clr-namespace:PISmartcardClient.ViewModels"
         d:DataContext="{d:DesignInstance Type=viewmodels:SettingsVM}"
+        x:Name="SettingsWdw"
         Title="Settings" Height="450" Width="700">
     <Grid>
         <DataGrid HorizontalAlignment="Center" VerticalAlignment="Center" RowHeaderWidth="0" Margin="0,15,0,60"
@@ -41,6 +42,7 @@
                 </Style>
             </DataGrid.Resources>
         </DataGrid>
+        <Button Content="Close" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,20" Style="{StaticResource PromptButton}" 
+                Command="{Binding Close}" CommandParameter="{Binding ElementName=SettingsWdw}"/>
     </Grid>
 </Window>
-    

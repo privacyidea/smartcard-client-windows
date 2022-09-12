@@ -1,17 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="BerTlv.NET" Version="2.0.3" />
-    <PackageReference Include="System.Security.Cryptography.Cng" Version="6.0.0-preview.4.21253.7" />
-    <PackageReference Include="Yubico.YubiKey" Version="1.4.0" />
-  </ItemGroup>
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+		<LangVersion>default</LangVersion>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\PIVBase\PIVBase.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="BerTlv.NET" Version="2.0.3" />
+		<PackageReference Include="System.Security.Cryptography.Cng" Version="6.0.0-preview.4.21253.7" />
+		<PackageReference Include="Yubico.YubiKey" Version="1.4.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\PIVBase\PIVBase.csproj" />
+	</ItemGroup>
 
 </Project>

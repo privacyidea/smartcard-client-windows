@@ -7,7 +7,7 @@ namespace PISmartcardClient.Windows
     /// <summary>
     /// Interaction logic for PIAuthWindow.xaml
     /// </summary>
-    public partial class AuthInputWindow : Window, ICloseableWindow
+    public partial class AuthInputWindow : Window
     {
         public AuthInputWindow()
         {
@@ -21,11 +21,6 @@ namespace PISmartcardClient.Windows
             }
             
             UserInput.Focus();
-        }
-
-        public void CloseWindow()
-        {
-            Close();
         }
     }
 }

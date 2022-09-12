@@ -7,24 +7,19 @@ namespace PISmartcardClient.Windows
     /// <summary>
     /// Interaction logic for PinInputWindow.xaml
     /// </summary>
-    public partial class PinWindow : Window, ICloseableWindow
+    public partial class PinWindow : Window
     {
         public PinWindow()
         {
             InitializeComponent();
             Owner = App.Current.MainWindow;
-            PinVM? vm = App.Current.Services.GetService<PinVM>();
             PWB1.Focus();
-            if (vm is not null)
+            Title = "PIN required";
+            if (App.Current.Services.GetService<PinVM>() is PinVM vm)
             {
                 DataContext = vm;
                 vm.PinGetter = () => (PWB1.Password, PWB2.Password);
             }
-        }
-
-        public void CloseWindow()
-        {
-            Close();
         }
     }
 }

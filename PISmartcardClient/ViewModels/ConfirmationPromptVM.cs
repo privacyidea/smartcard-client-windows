@@ -1,7 +1,6 @@
-﻿using System;
-using PISmartcardClient.Windows;
-using Microsoft.Toolkit.Mvvm.ComponentModel;
+﻿using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.Input;
+using System.Windows;
 
 namespace PISmartcardClient.ViewModels
 {
@@ -14,8 +13,8 @@ namespace PISmartcardClient.ViewModels
             set => SetProperty(ref _Message, value);
         }
 
-        public RelayCommand<ICloseableWindow> BtnOK { get; set; }
-        public RelayCommand<ICloseableWindow> BtnCancel { get; set; }
+        public RelayCommand<Window> BtnOK { get; set; }
+        public RelayCommand<Window> BtnCancel { get; set; }
         public bool Cancelled { get; set; }
 
         public bool ShowCancel { get; set; }
@@ -25,14 +24,14 @@ namespace PISmartcardClient.ViewModels
             BtnOK = new(
                 (window) =>
                 {
-                    window?.CloseWindow();
+                    window?.Close();
                 });
 
             BtnCancel = new(
                 (window) =>
                 {
                     Cancelled = true;
-                    window?.CloseWindow();
+                    window?.Close();
                 });
         }
     }

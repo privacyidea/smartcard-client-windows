@@ -157,16 +157,19 @@ namespace PISmartcardClient.ViewModels
         private readonly IPersistenceService _PersistenceService;
         private readonly IDeviceService _DeviceService;
         private readonly IUIDispatcher _UIDispatcher;
+        private readonly ISettingsService _SettingsService;
 
         private bool _DeviceInserted = true;
         private bool _DeviceRemoved = true;
 
-        public MainVM(IWindowService windowService, IPrivacyIDEAService privacyIDEAService,
+        public MainVM(IWindowService windowService, IPrivacyIDEAService privacyIDEAService, ISettingsService settingsService,
             IPersistenceService persistenceService, IDeviceService deviceService, IUIDispatcher uiDispatcher)
         {
             _WindowService = windowService;
             _PrivacyIDEAService = privacyIDEAService;
             privacyIDEAService.RegisterUpdateStatus(new((message) => Status = message));
+
+            _SettingsService = settingsService;
             _PersistenceService = persistenceService;
             _DeviceService = deviceService;
             _UIDispatcher = uiDispatcher;
@@ -525,7 +528,7 @@ namespace PISmartcardClient.ViewModels
                 await Task.Run(() =>
                 {
                     CurrentSlot = slot;
-                    X509Certificate2 cert = CurrentDevice!.GetCertificate(slot);
+                    X509Certificate2? cert = CurrentDevice!.GetCertificate(slot);
                     CurrentSlotData = cert is not null
                         ? new SlotData
                         {
@@ -591,16 +594,29 @@ namespace PISmartcardClient.ViewModels
             }
             string subjectName = _PrivacyIDEAService.CurrentUser()!;
 
-            PIVSlot slot = CurrentSlot;
-            (bool success, string? algorithm) = _WindowService.EnrollmentForm();
+            // TODO REMOVE
+            subjectName += new Random().Next(10000);
 
-            if (!success)
+            PIVSlot slot = CurrentSlot;
+            string algo = "";
+            bool success = false;
+            if (_SettingsService.GetStringProperty("algorithm") is string settingsAlg)
             {
-                Log("EnrollmentForm cancelled.");
-                return;
+                Log($"Using fixed algorithm from settings: {settingsAlg}");
+                algo = settingsAlg;
+            }
+            else
+            {
+                (success, string? formAlg) = _WindowService.EnrollmentForm();
+                if (!success)
+                {
+                    Log("EnrollmentForm cancelled.");
+                    return;
+                }
+                algo = formAlg!;
             }
 
-            PIVAlgorithm pivAlgorithm = algorithm!.ToEnum<PIVAlgorithm>();
+            PIVAlgorithm pivAlgorithm = algo.ToEnum<PIVAlgorithm>();
 
             PICertificateRequestData? data = CertUtil.CreateCSRData(CurrentDevice, subjectName, pivAlgorithm, slot);
             if (data != null)
@@ -662,7 +678,7 @@ namespace PISmartcardClient.ViewModels
                             if (success)
                             {
                                 Log("Import successful!");
-                                Status = "Imported the certificate successfully!";
+                                Status = "Certificate import successful!";
                                 await LoadSlot(slot);
                                 _PendingCSRForSlot = null;
                                 ShowCheckPendingBtn = false;
@@ -687,7 +703,7 @@ namespace PISmartcardClient.ViewModels
             }
         }
 
-        public void OnWindowClosing(object sender, CancelEventArgs e)
+        public void OnWindowClosing(object? sender, CancelEventArgs e)
         {
             //Log("OnWindowClosing");
             CurrentDevice?.Disconnect();

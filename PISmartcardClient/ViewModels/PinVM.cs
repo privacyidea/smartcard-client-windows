@@ -1,6 +1,6 @@
 ﻿using System;
-using PISmartcardClient.Windows;
 using Microsoft.Toolkit.Mvvm.Input;
+using System.Windows;
 
 namespace PISmartcardClient.ViewModels
 {
@@ -11,8 +11,8 @@ namespace PISmartcardClient.ViewModels
         public string? Input2Label { get; set; }
         public bool Cancelled { get; set; }
         public bool Show2ndInput { get; set; }
-        public RelayCommand<ICloseableWindow> BtnOK { get; set; }
-        public RelayCommand<ICloseableWindow> BtnCancel { get; set; }
+        public RelayCommand<Window> BtnOK { get; set; }
+        public RelayCommand<Window> BtnCancel { get; set; }
         public Func<(string?, string?)>? PinGetter { get; set; }
         public string? Pin1 { get; private set; }
         public string? Pin2 { get; private set; }
@@ -26,13 +26,13 @@ namespace PISmartcardClient.ViewModels
                     Pin1 = tuple.Item1;
                     Pin2 = tuple.Item2;
                 }
-                wdw?.CloseWindow();
+                wdw?.Close();
             });
 
             BtnCancel = new((wdw) =>
             {
                 Cancelled = true;
-                wdw?.CloseWindow();
+                wdw?.Close();
             });
         }
     }

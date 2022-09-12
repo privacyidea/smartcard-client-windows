@@ -1,6 +1,6 @@
-﻿using PISmartcardClient.Windows;
-using Microsoft.Toolkit.Mvvm.ComponentModel;
+﻿using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.Input;
+using System.Windows;
 
 namespace PISmartcardClient.ViewModels
 {
@@ -34,11 +34,11 @@ namespace PISmartcardClient.ViewModels
             get => _ButtonText;
             set => SetProperty(ref _ButtonText, value);
         }
-        public RelayCommand<ICloseableWindow> OnClick { get; set; }
+        public RelayCommand<Window> OnClick { get; set; }
 
         public PromptVM()
         {
-            OnClick = new(CloseWindow);
+            OnClick = new((wdw) => wdw?.Close());
         }
 
         public void Reset()
@@ -48,11 +48,6 @@ namespace PISmartcardClient.ViewModels
             ButtonText = "OK";
             Message = "";
             Input = "";
-        }
-
-        private void CloseWindow(ICloseableWindow? window)
-        {
-            window?.CloseWindow();
         }
     }
 }

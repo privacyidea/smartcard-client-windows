@@ -52,18 +52,28 @@ namespace PISmartcardClient.Utilities
                 ECDsaCng ecdsa = new(publicKey);
                 csr = new("cn=" + subjectName, ecdsa, HashAlgorithmName.SHA256);
             }
-           
-            X509SignatureGenerator signatureGenerator = device.GetX509SignatureGenerator(slot, algorithm);
+
+            X509SignatureGenerator? signatureGenerator = device.GetX509SignatureGenerator(slot, algorithm);
+            if (signatureGenerator is null)
+            {
+                Error("Unable to get X509SignatureGenerator from the device!");
+                return null;
+            }
             byte[]? pkcs10Bytes = csr.CreateSigningRequest(signatureGenerator);
-          
+
             string strCSR = FormatCertBytesForFile(pkcs10Bytes, true);
             if (string.IsNullOrEmpty(strCSR))
             {
                 Log("Could not create CSR.");
                 return null;
             }
-            
-            X509Certificate2 attCert = device.GetAttestationForSlot(slot);
+
+            X509Certificate2? attCert = device.GetAttestationForSlot(slot);
+            if (attCert is null)
+            {
+                Error("Unable to get the attestation certificate from the device!");
+                return null;
+            }
             string attestation = new(PemEncoding.Write("CERTIFICATE", attCert.RawData));
 
             return new PICertificateRequestData(strCSR, attestation);

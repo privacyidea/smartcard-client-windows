@@ -12,3 +12,4 @@ Tests/obj
 packages/
 Installer/bin
 Installer/obj
+Installer/HeatGeneratedFileList.wxs

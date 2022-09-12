@@ -7,18 +7,13 @@ namespace PISmartcardClient.Windows
     /// <summary>
     /// Interaction logic for ActionPrompt.xaml
     /// </summary>
-    public partial class ConfirmationPrompt : Window, ICloseableWindow
+    public partial class ConfirmationPrompt : Window
     {
         public ConfirmationPrompt()
         {
             InitializeComponent();
             Owner = App.Current.MainWindow;
             DataContext = App.Current.Services.GetService<ConfirmationPromptVM>();
-        }
-
-        public void CloseWindow()
-        {
-            Close();
         }
     }
 }

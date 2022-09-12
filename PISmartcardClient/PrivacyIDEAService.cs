@@ -18,7 +18,7 @@ namespace PISmartcardClient
 
         private string? _CurrentAuthToken;
         private string? _CurrentUsername;
-
+        
         private Action<string?>? _UpdateStatusField;
 
         private PrivacyIDEA? _PrivacyIDEA;
@@ -36,6 +36,11 @@ namespace PISmartcardClient
                 {
                     Logger = this
                 };
+                if (settingsService.GetStringProperty("realm") is string realm)
+                {
+                    Log($"Setting realm to {realm}");
+                    _PrivacyIDEA.Realm = realm;
+                }
             }
         }
 
@@ -181,7 +186,7 @@ namespace PISmartcardClient
                                 if (tmp is not null)
                                 {
                                     ret.Add(tmp);
-                                } 
+                                }
                                 else
                                 {
                                     Error($"Could not parse input {element} to token, skipping");
