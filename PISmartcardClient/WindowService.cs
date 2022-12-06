@@ -61,10 +61,20 @@ namespace PISmartcardClient
             return (true, formVM.SelectedAlgorithm);
         }
 
-        (bool success, string? user, string? secondInput) IWindowService.AuthenticationPrompt()
+        (bool success, string? user, string? secondInput) IWindowService.AuthenticationPrompt(string? message, string? otpLabel, bool showUserInput)
         {
             AuthInputWindow authWindow = new();
             AuthVM authVM = (AuthVM)authWindow.DataContext;
+            authVM.ShowUsernameInput = showUserInput;
+            if (otpLabel is string s)
+            {
+                authVM.PasswordLabel = s;
+            }
+
+            if (message is string msg)
+            {
+                authVM.Message = msg;
+            }
 
             ShowBlockingDialog(authWindow);
 
