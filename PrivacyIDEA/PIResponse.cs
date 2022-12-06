@@ -18,6 +18,7 @@ namespace PrivacyIDEAClient
         public string Certificate { get; set; } = "";
         public string RolloutState { get; set; } = "";
         public string Raw { get; set; } = "";
+        public string AuthToken { get; set; } = "";
         public List<PIChallenge> Challenges { get; set; } = new List<PIChallenge>();
         public PIResponse() { }
 
@@ -73,7 +74,18 @@ namespace PrivacyIDEAClient
                     JToken jVal = result["value"];
                     if (jVal != null)
                     {
-                        ret.Value = (bool)jVal;
+                        if (jVal.Type == JTokenType.Boolean)
+                        {
+                            ret.Value = (bool)jVal;
+                        }
+                        else
+                        {
+                            JToken jAuthToken = jVal["token"];
+                            if (jAuthToken != null && jAuthToken.Type == JTokenType.String)
+                            {
+                                ret.AuthToken = (string)jAuthToken;
+                            }
+                        }
                     }
 
                     JToken error = result["error"];
@@ -114,7 +126,7 @@ namespace PrivacyIDEAClient
                                 JToken attr = element["attributes"];
                                 tmp.WebAuthnSignRequest = attr["webAuthnSignRequest"].ToString(Formatting.None);
                                 tmp.WebAuthnSignRequest.Replace("\n", "");
-                                
+
                                 ret.Challenges.Add(tmp);
                             }
                             else

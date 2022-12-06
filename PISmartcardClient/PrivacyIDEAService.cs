@@ -18,7 +18,7 @@ namespace PISmartcardClient
 
         private string? _CurrentAuthToken;
         private string? _CurrentUsername;
-        
+
         private Action<string?>? _UpdateStatusField;
 
         private PrivacyIDEA? _PrivacyIDEA;
@@ -48,26 +48,76 @@ namespace PISmartcardClient
         {
             Log("PrivacyIDEA Service: DoUserAuthentication");
             EnsurePISetup();
-            (bool success, string? user, string? secondInput) = _WindowService.AuthenticationPrompt();
 
-            if (!success)
-            {
-                return false;
-            }
+            bool ret = false;
+            PIResponse? response = null;
+            string? message = null;
+            string? otpLabel = _SettingsService.GetStringProperty("otp_label");
+            bool showUserInput = true;
+            string? finalUser = null;
 
-            if (!string.IsNullOrEmpty(user))
+            while (true)
             {
+                if (response is not null)
+                {
+                    message = response.Message;
+                    showUserInput = false;
+                }
+
+                (bool success, string? user, string? secondInput) = _WindowService.AuthenticationPrompt(message, otpLabel, showUserInput);
+
+                if (success is false)
+                {
+                    break;
+                }
+
+                if (string.IsNullOrEmpty(user) is false)
+                {
+                    finalUser ??= user;
+                }
+
                 CancellationToken cToken = _WindowService.StartLoadingWindow("Authenticating...");
                 Exception? exception = null;
+
                 try
                 {
-                    string authToken = await Task.Run(() => _PrivacyIDEA!.Auth(user, secondInput ?? "", cancellationToken: cToken));
-                    if (!string.IsNullOrEmpty(authToken))
+                    response = await _PrivacyIDEA!.Auth(finalUser, secondInput ?? "", cancellationToken: cToken); // todo add transaction_id
+
+                    if (response is not null)
                     {
-                        _CurrentAuthToken = authToken;
-                        _CurrentUsername = user;
-                        _PrivacyIDEA!.SetAuthorizationHeader(_CurrentAuthToken);
-                        return true;
+                        if (string.IsNullOrEmpty(response.ErrorMessage) is false)
+                        {
+                            Log($"Authentication error: {response.ErrorMessage}");
+                            UpdateStatus($"Authentication error: {response.ErrorMessage}");
+                            break;
+                        }
+                        else if (string.IsNullOrEmpty(response.AuthToken) is false)
+                        {
+                            _CurrentAuthToken = response.AuthToken;
+                            _CurrentUsername = user;
+                            _PrivacyIDEA!.SetAuthorizationHeader(_CurrentAuthToken);
+                            ret = true;
+                            break;
+                        }
+                        else if (response.Challenges.Count > 0)
+                        {
+                            var chalList = response.Challenges.FindAll(challenge => challenge.Type == "hotp" || challenge.Type == "sms"
+                            || challenge.Type == "totp" || challenge.Type == "email");
+
+                            if (chalList.Count == 0)
+                            {
+                                Log("Unable to challenge the triggered type of token(s). Please try another one.");
+                                UpdateStatus("Unable to challenge the triggered type of token(s). Please try another one.");
+                                break;
+                            }
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        Log("PrivacyIDEA response is null");
+                        UpdateStatus("PrivacyIDEA response is null");
+                        break;
                     }
                 }
                 catch (TaskCanceledException)
@@ -81,7 +131,7 @@ namespace PISmartcardClient
                 }
                 catch (UriFormatException)
                 {
-                    Error("PrivacyIDEA URL is empty or in wrong format");
+                    Error("PrivacyIDEA URL is empty or in wrong format.");
                     UpdateStatus("PrivacyIDEA URL is empty or in wrong format!");
                 }
                 finally
@@ -94,12 +144,7 @@ namespace PISmartcardClient
                     throw exception;
                 }
             }
-            else
-            {
-                Log("Authentication: Username input was empty.");
-                UpdateStatus("Cannot authenticate with emtpy username!");
-            }
-            return false;
+            return ret;
         }
 
         async Task<PIResponse?> IPrivacyIDEAService.SendCSR(string csr, string attestation, string? description)

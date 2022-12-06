@@ -109,7 +109,7 @@ namespace PrivacyIDEAClient
             return response;
         }
 
-        public async Task<string> Auth(string user, string pass, string realm = default, CancellationToken cancellationToken = default)
+        public async Task<PIResponse> Auth(string user, string pass, string realm = default, CancellationToken cancellationToken = default)
         {
             Log("PrivacyIDEA Client Auth: user=" + user + ", pass=" + pass + ", realm=" + realm);
             Dictionary<string, string> dict = new()
@@ -118,7 +118,12 @@ namespace PrivacyIDEAClient
                 { "password", pass }
             };
 
-            if (!string.IsNullOrEmpty(realm))
+            //TODO
+            if (!string.IsNullOrEmpty(Realm))
+            {
+                dict.Add("realm", Realm);
+            }
+            else if (!string.IsNullOrEmpty(realm))
             {
                 dict.Add("realm", realm);
             }
@@ -131,18 +136,7 @@ namespace PrivacyIDEAClient
                 return null;
             }
 
-            string token = "";
-            try
-            {
-                dynamic root = JsonConvert.DeserializeObject(response);
-                token = root.result.value.token;
-            }
-            catch (Exception)
-            {
-                Error("/auth response did not have the correct format or did not contain a token.\n" + response);
-            }
-            //Log("auth token: " + token);
-            return token;
+            return PIResponse.FromJSON(response, this);
         }
 
         public void SetAuthorizationHeader(string token)
