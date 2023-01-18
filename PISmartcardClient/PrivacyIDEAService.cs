@@ -56,7 +56,7 @@ namespace PISmartcardClient
             string? message = null;
             string? secondInputLabel = null;
 
-            // ret indicates success for both OTP and push threads. bool get/set operations are atomic by default
+            // completed indicates success for both OTP and push threads. bool get/set operations are atomic by default
             bool completed = false;
             string? user = null;
             CancellationTokenSource source = new();
