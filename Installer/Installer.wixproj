@@ -20,7 +20,7 @@
   </PropertyGroup>
   <!--  Heat Harvest path to get the published app files -->
   <PropertyGroup>
-    <DefineConstants>HarvestPath=..\PISmartcardClient\bin\Release\net5.0-windows\publish</DefineConstants>
+    <DefineConstants>HarvestPath=..\PISmartcardClient\bin\Release\net6.0-windows\publish\win-x64</DefineConstants>
     <RunWixToolsOutOfProc Condition=" '$(PROCESSOR_ARCHITECTURE)'!='x86' ">true</RunWixToolsOutOfProc>
   </PropertyGroup>
   <!-- -->
@@ -29,8 +29,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Dialogs.wxs" />
-    <Compile Include="Product.wxs" />
     <Compile Include="HeatGeneratedFileList.wxs" />
+    <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Include.wxi" />
@@ -60,13 +60,12 @@
   <Target Name="EnsureWixToolsetInstalled" Condition=" '$(WixTargetsImported)' != 'true' ">
     <Error Text="The WiX Toolset v3.11 (or newer) build tools must be installed to build this project. To download the WiX Toolset, see http://wixtoolset.org/releases/" />
   </Target>
-  
   <Target Name="BeforeBuild">
     <!-- Publish to folder before running heat -->
-    <Exec Command="dotnet publish ..\PISmartcardClient\PISmartcardClient.csproj /p:PublishProfile=..\PISmardcardClient\Properties\PublishProfiles\FolderProfile.pubxml"/>
+    <Exec Command="dotnet publish ..\PISmartcardClient\PISmartcardClient.csproj /p:PublishProfile=..\PISmardcardClient\Properties\PublishProfiles\FolderProfile.pubxml" />
     <!-- Run heat as a separate process because heat is 32bit, but it should run on 64bit -->
     <!-- Transforms excludes the exe from harvesting so it can be used as a component to create shortcuts (=> it is installed manually)-->
-    <HeatDirectory Directory="..\PISmartcardClient\bin\Release\net6.0-windows\publish" RunAsSeparateProcess="$(RunWixToolsOutOfProc)" PreprocessorVariable="var.HarvestPath" OutputFile="HeatGeneratedFileList.wxs" ComponentGroupName="HeatGenerated" DirectoryRefId="INSTALLFOLDER" AutogenerateGuids="true" ToolPath="$(WixToolPath)" SuppressFragments="true" SuppressRegistry="true" SuppressRootDirectory="true" Transforms=".\HeatFilter.xslt" />
+    <HeatDirectory Directory="..\PISmartcardClient\bin\Release\net6.0-windows\publish\win-x64" RunAsSeparateProcess="$(RunWixToolsOutOfProc)" PreprocessorVariable="var.HarvestPath" OutputFile="HeatGeneratedFileList.wxs" ComponentGroupName="HeatGenerated" DirectoryRefId="INSTALLFOLDER" AutogenerateGuids="true" ToolPath="$(WixToolPath)" SuppressFragments="true" SuppressRegistry="true" SuppressRootDirectory="true" Transforms=".\HeatFilter.xslt" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

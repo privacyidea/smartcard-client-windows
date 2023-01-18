@@ -9,6 +9,8 @@
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net6.0-windows</TargetFramework>
 		<UseWPF>true</UseWPF>
+		<SelfContained>false</SelfContained>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<ApplicationIcon>pi.ico</ApplicationIcon>
 		<StartupObject></StartupObject>
 		<AssemblyName>PISmartcardClient</AssemblyName>
@@ -18,6 +20,8 @@
 		<PackageProjectUrl>https://github.com/privacyidea/smartcard-client-windows</PackageProjectUrl>
 		<AssemblyVersion>1.0.0</AssemblyVersion>
 		<FileVersion>1.0.0</FileVersion>
+		<PlatformTarget>x64</PlatformTarget>
+		<BaseOutputPath></BaseOutputPath>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -28,9 +32,9 @@
 	<ItemGroup>
 		<PackageReference Include="LoadingSpinner.WPF" Version="1.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Toolkit.Mvvm" Version="7.1.0-rc2" />
-		<PackageReference Include="System.Management" Version="5.0.0" />
-		<PackageReference Include="Yubico.YubiKey" Version="1.4.0" />
+		<PackageReference Include="Microsoft.Toolkit.Mvvm" Version="7.1.2" />
+		<PackageReference Include="System.Management" Version="6.0.0" />
+		<PackageReference Include="Yubico.YubiKey" Version="1.4.2" />
 	</ItemGroup>
 
 	<ItemGroup>

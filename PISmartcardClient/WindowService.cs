@@ -12,6 +12,14 @@ namespace PISmartcardClient
     {
         private LoadingWindow? _LoadingWindow;
 
+        private readonly IUIDispatcher _UIDispatcher;
+        private Window? _CurrentChildWindow;
+
+        public WindowService(IUIDispatcher uiDispatcher)
+        {
+            _UIDispatcher = uiDispatcher;
+        }
+
         (bool, string?) IWindowService.SimplePrompt(string? title, string message, string buttonText)
         {
             Prompt prompt = new();
@@ -61,10 +69,20 @@ namespace PISmartcardClient
             return (true, formVM.SelectedAlgorithm);
         }
 
-        (bool success, string? user, string? secondInput) IWindowService.AuthenticationPrompt()
+        (bool success, string? user, string? secondInput) IWindowService.AuthenticationPrompt(string? message, bool showUsernameInput, string? secondInputLabel)
         {
             AuthInputWindow authWindow = new();
             AuthVM authVM = (AuthVM)authWindow.DataContext;
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                authVM.Message = message;
+            }
+            if (!string.IsNullOrEmpty(secondInputLabel))
+            {
+                authVM.PasswordLabel = secondInputLabel;
+            }
+            authVM.ShowUsernameInput = showUsernameInput;
 
             ShowBlockingDialog(authWindow);
 
@@ -90,6 +108,7 @@ namespace PISmartcardClient
         private void ShowBlockingDialog<T>(T t) where T : Window
         {
             Application.Current.MainWindow.IsEnabled = false;
+            _CurrentChildWindow = t;
             try
             {
                 t.ShowDialog();
@@ -101,6 +120,7 @@ namespace PISmartcardClient
             finally
             {
                 t.Close();
+                _CurrentChildWindow = null;
             }
 
             Application.Current.MainWindow.IsEnabled = true;
@@ -188,6 +208,14 @@ namespace PISmartcardClient
         {
             SettingsWindow settings = new();
             ShowBlockingDialog(settings);
+        }
+
+        public void CloseChildWindows()
+        {
+            _UIDispatcher.Invoke(new Action(() =>
+            {
+                _CurrentChildWindow?.Close();
+            }));
         }
     }
 }

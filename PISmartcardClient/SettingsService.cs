@@ -78,7 +78,7 @@ namespace PISmartcardClient
                     }
                     else
                     {
-                        Log("object for key " + key + " is null.");
+                        Log("object for key " + key + "\\" + name + " is null.");
                     }
 
                 }

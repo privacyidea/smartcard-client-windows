@@ -9,7 +9,7 @@
         WindowStartupLocation="CenterOwner"
         x:Name="PIAuthWdw"
         Style="{StaticResource PromptWindow}"
-        Height="300" Width="550" 
+        Height="400" Width="550" 
         Title="privacyIDEA Authentication">
 
     <Window.InputBindings>
@@ -20,16 +20,18 @@
     <Grid Margin="0,0,0,5">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="4*"/>
-            <RowDefinition Height="2*"/>
+            <RowDefinition Height="3*"/>
+            <RowDefinition Height="3*"/>
+            <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
         <Label Content="privacyIDEA Authentication" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center"
                Style="{StaticResource PromptLabel}" FontSize="12"/>
 
-        <Label Grid.Row="1" Content="{Binding Message}"
-               VerticalAlignment="Center" HorizontalAlignment="Center"
-               Style="{StaticResource PromptLabel}"/>
+        <TextBlock Grid.Row="1" Text="{Binding Message}"
+                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                   TextWrapping="Wrap" TextAlignment="Center"
+                   Width="500" Height="auto" MaxHeight="140"
+                   FontWeight="DemiBold" FontSize="16" />
 
         <Grid Grid.Row="2" Margin="0,5,0,5">
             <Grid.RowDefinitions>
@@ -53,10 +55,6 @@
                      HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0"
                      Visibility="{Binding Path=ShowUsernameInput, Converter={StaticResource BoolToVis}}"
                      Style="{StaticResource PromptTextBox}" Width="250"/>
-
-            <!--<TextBox Grid.Column="1" Grid.Row="1" Text="{Binding PasswordInput, UpdateSourceTrigger=PropertyChanged}"
-                       HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0"
-                       Style="{StaticResource PromptTextBox}" Width="250"/>-->
 
             <PasswordBox Grid.Column="1" Grid.Row="1" x:Name="PWB1" 
                          HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0"
