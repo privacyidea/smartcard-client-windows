@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace PISmartcardClient
 
         private string? _CurrentAuthToken;
         private string? _CurrentUsername;
-        
+
         private Action<string?>? _UpdateStatusField;
 
         private PrivacyIDEA? _PrivacyIDEA;
@@ -48,58 +49,151 @@ namespace PISmartcardClient
         {
             Log("PrivacyIDEA Service: DoUserAuthentication");
             EnsurePISetup();
-            (bool success, string? user, string? secondInput) = _WindowService.AuthenticationPrompt();
 
-            if (!success)
-            {
-                return false;
-            }
+            // Default values to start with
+            PIResponse? response = null;
+            bool showUsernameInput = true;
+            string? message = null;
+            string? secondInputLabel = null;
 
-            if (!string.IsNullOrEmpty(user))
+            // completed indicates success for both OTP and push threads. bool get/set operations are atomic by default
+            bool completed = false;
+            string? user = null;
+            CancellationTokenSource source = new();
+            var pollToken = source.Token;
+
+            while (!completed)
             {
-                CancellationToken cToken = _WindowService.StartLoadingWindow("Authenticating...");
-                Exception? exception = null;
-                try
+                // Overwrite defaults if there was a response
+                if (response is not null)
                 {
-                    string authToken = await Task.Run(() => _PrivacyIDEA!.Auth(user, secondInput ?? "", cancellationToken: cToken));
-                    if (!string.IsNullOrEmpty(authToken))
+                    showUsernameInput = false;
+                    message = response.Message;
+                    secondInputLabel = "One-Time Password:";
+                }
+                (bool success, string? userInput, string? secondInput) = _WindowService.AuthenticationPrompt(message, showUsernameInput, secondInputLabel);
+                if (!success)
+                {
+                    source.Cancel();
+                    completed = false;
+                    break;
+                }
+                // Persist the username for possible second step
+                if (user is null && !string.IsNullOrEmpty(userInput))
+                {
+                    user = userInput;
+                }
+
+                // Try to authenticate with the inputs
+                if (!string.IsNullOrEmpty(user) || response is not null)
+                {
+                    // Exit here if push authentication was completed
+                    if (completed)
                     {
-                        _CurrentAuthToken = authToken;
-                        _CurrentUsername = user;
-                        _PrivacyIDEA!.SetAuthorizationHeader(_CurrentAuthToken);
-                        return true;
+                        break;
+                    }
+                    CancellationToken? cToken = _WindowService.StartLoadingWindow("Authenticating...");
+                    Exception? exception = null;
+
+                    // Run the actual authentication in a separate thread so the loading window is animated
+                    await Task.Run(async () =>
+                    {
+                        Task? t = null;
+                        try
+                        {
+                            string? transactionID = null;
+                            if (response is not null)
+                            {
+                                transactionID = response.TransactionID;
+                            }
+                            response = await _PrivacyIDEA!.Auth(user, secondInput ?? "", transactionID: transactionID, cancellationToken: cToken ?? default);
+
+                            // Check if authentication is successful or if challenges have been triggered
+                            if (!string.IsNullOrEmpty(response.AuthToken))
+                            {
+                                _CurrentAuthToken = response.AuthToken;
+                                _CurrentUsername = user;
+                                _PrivacyIDEA!.SetAuthorizationHeader(_CurrentAuthToken);
+                                completed = true;
+                                source.Cancel();
+                                return;
+                            }
+                            else if (response.Challenges.Count > 0)
+                            {
+                                if (response.Challenges.Any(c => c.Type == "push"))
+                                {
+                                    // Run the polling for push in separate thread which has to be terminated if the authentication is completed otherwise
+                                    string pollTransactionID = response.TransactionID;
+                                    t = Task.Run(async () =>
+                                    {
+                                        while (!pollToken.IsCancellationRequested)
+                                        {
+                                            Thread.Sleep(250);
+                                            bool pushCompleted = await _PrivacyIDEA.PollTransaction(pollTransactionID);
+                                            if (pushCompleted) { break; }
+                                        }
+                                    });
+                                    t.GetAwaiter().OnCompleted(async () =>
+                                    {
+                                        if (!pollToken.IsCancellationRequested)
+                                        {
+                                            var finalResponse = await _PrivacyIDEA.Auth(user, "", pollTransactionID);
+                                            if (!string.IsNullOrEmpty(finalResponse.AuthToken))
+                                            {
+                                                _CurrentAuthToken = finalResponse.AuthToken;
+                                                _CurrentUsername = user;
+                                                _PrivacyIDEA!.SetAuthorizationHeader(_CurrentAuthToken);
+                                                completed = true;
+                                                _WindowService.CloseChildWindows();
+                                            }
+                                            else
+                                            {
+                                                Error($"Authentication with push token could not be completed. Check the server response. Error:{finalResponse.ErrorMessage}");
+                                            }
+                                        }
+                                        Log("Poll thread terminating");
+                                    });
+                                }
+                            }
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            Log("Authentication cancelled!");
+                        }
+                        catch (HttpRequestException e)
+                        {
+                            Error(e);
+                            exception = e;
+                        }
+                        catch (UriFormatException)
+                        {
+                            Error("PrivacyIDEA URL is empty or in wrong format");
+                            UpdateStatus("PrivacyIDEA URL is empty or in wrong format!");
+                        }
+                        catch (Exception e)
+                        {
+                            Error($"Unknown error:{e.Message}\n{e.StackTrace}");
+                            UpdateStatus($"An unknown error occured: {e.Message}");
+                            exception = e;
+                        }
+                    });
+                    // Guarantee that the loading window is closed by the owner thread then rethrow so the callee can handle the exception
+                    _WindowService.StopLoadingWindow();
+
+                    if (exception is not null)
+                    {
+                        throw exception;
                     }
                 }
-                catch (TaskCanceledException)
+                else
                 {
-                    Log("Authentication cancelled!");
+                    Log("Authentication: Username input was empty.");
+                    UpdateStatus("Cannot authenticate with emtpy username!");
+                    break;
                 }
-                catch (HttpRequestException e)
-                {
-                    Error(e);
-                    exception = e;
-                }
-                catch (UriFormatException)
-                {
-                    Error("PrivacyIDEA URL is empty or in wrong format");
-                    UpdateStatus("PrivacyIDEA URL is empty or in wrong format!");
-                }
-                finally
-                {
-                    _WindowService.StopLoadingWindow();
-                }
+            }
 
-                if (exception is not null)
-                {
-                    throw exception;
-                }
-            }
-            else
-            {
-                Log("Authentication: Username input was empty.");
-                UpdateStatus("Cannot authenticate with emtpy username!");
-            }
-            return false;
+            return completed;
         }
 
         async Task<PIResponse?> IPrivacyIDEAService.SendCSR(string csr, string attestation, string? description)

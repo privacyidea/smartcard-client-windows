@@ -456,9 +456,9 @@ namespace PISmartcardClient.ViewModels
 
         private void CheckForPendingCSR()
         {
-            Log($"Checking for pending CSR for slot {CurrentSlot:G}");
             if (_PrivacyIDEAService.CurrentUser() is string username && CurrentSlot is not PIVSlot.None && _CurrentDevice is IPIVDevice curDevice)
             {
+                Log($"Checking for pending CSR for slot {CurrentSlot:G}");
                 var pendingForUser = _PersistenceService.LoadData(username);
                 _PendingCSRsForUserDevice = pendingForUser.FindAll(item => item.DeviceSerial == curDevice.Serial());
 
@@ -705,8 +705,8 @@ namespace PISmartcardClient.ViewModels
 
         public void OnWindowClosing(object? sender, CancelEventArgs e)
         {
-            //Log("OnWindowClosing");
             CurrentDevice?.Disconnect();
+            Log("Process terminated.");
         }
 
         #region PI_LOG

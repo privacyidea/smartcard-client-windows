@@ -48,8 +48,7 @@ namespace PrivacyIDEAClient
         private static readonly List<string> exludeFromURIEscape = new(new string[]
            { "credentialid", "clientdata", "signaturedata", "authenticatordata", "userhandle", "assertionclientextensions" });
 
-        public List<string> logExcludedEndpoints = new(new string[]
-           { "/validate/polltransaction", "/auth" });
+        public List<string> logExcludedEndpoints = new(new string[] { "/validate/polltransaction" });
 
         public PrivacyIDEA(string url, string useragent, bool sslVerify = true)
         {
@@ -64,31 +63,6 @@ namespace PrivacyIDEAClient
             }
             _HttpClient = new HttpClient(_HttpClientHandler);
             _HttpClient.DefaultRequestHeaders.Add("User-Agent", useragent);
-        }
-
-        /// <summary>
-        /// Trigger challenges for the given user using a service account.
-        /// </summary>
-        /// <param name="username">username to trigger challenges for</param>
-        /// <param name="domain">optional domain which can be mapped to a privacyIDEA realm</param>
-        /// <returns>PIResponse object or null on error</returns>
-        public async Task<PIResponse> TriggerChallenges(string username, string domain = null, CancellationToken cancellationToken = default)
-        {
-            if (!GetAuthToken())
-            {
-                Error("Unable to trigger challenges without an auth token!");
-                return null;
-            }
-
-            Dictionary<string, string> parameters = new()
-            {
-                { "user", username }
-            };
-
-
-            var response = await SendRequest("/validate/triggerchallenge", parameters, cancellationToken);
-            PIResponse ret = PIResponse.FromJSON(response, this);
-            return ret;
         }
 
         public async Task<string> GetToken(Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
@@ -109,7 +83,7 @@ namespace PrivacyIDEAClient
             return response;
         }
 
-        public async Task<string> Auth(string user, string pass, string realm = default, CancellationToken cancellationToken = default)
+        public async Task<PIResponse> Auth(string user, string pass, string transactionID = default, string realm = default, CancellationToken cancellationToken = default)
         {
             Log("PrivacyIDEA Client Auth: user=" + user + ", pass=" + pass + ", realm=" + realm);
             Dictionary<string, string> dict = new()
@@ -117,6 +91,11 @@ namespace PrivacyIDEAClient
                 { "username", user },
                 { "password", pass }
             };
+
+            if (!string.IsNullOrEmpty(transactionID))
+            {
+                dict.Add("transaction_id", transactionID);
+            }
 
             if (!string.IsNullOrEmpty(realm))
             {
@@ -131,18 +110,7 @@ namespace PrivacyIDEAClient
                 return null;
             }
 
-            string token = "";
-            try
-            {
-                dynamic root = JsonConvert.DeserializeObject(response);
-                token = root.result.value.token;
-            }
-            catch (Exception)
-            {
-                Error("/auth response did not have the correct format or did not contain a token.\n" + response);
-            }
-            //Log("auth token: " + token);
-            return token;
+            return PIResponse.FromJSON(response, this);
         }
 
         public void SetAuthorizationHeader(string token)
@@ -171,7 +139,6 @@ namespace PrivacyIDEAClient
                 { "type", "certificate" },
                 { "user", user },
                 { "ca", "ca" },
-                //{ "template", "user" },
                 { "request", csr },
                 { "attestation", attestation }
             };
@@ -200,7 +167,7 @@ namespace PrivacyIDEAClient
                     { "transaction_id", transactionid }
                 };
 
-                var response = await SendRequest("/validate/polltransaction", map, default(CancellationToken), new List<KeyValuePair<string, string>>(), "GET");
+                var response = await SendRequest("/validate/polltransaction", map, default, new List<KeyValuePair<string, string>>(), "GET");
                 if (string.IsNullOrEmpty(response))
                 {
                     Error("/validate/polltransaction did not respond!");
