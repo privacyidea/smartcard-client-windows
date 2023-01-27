@@ -532,11 +532,11 @@ namespace PISmartcardClient.ViewModels
                     CurrentSlotData = cert is not null
                         ? new SlotData
                         {
-                            ExpirationDate = cert.NotAfter.ToShortDateString(),
-                            DateOfIssue = cert.NotBefore.ToShortDateString(),
+                            ExpirationDate = cert.NotAfter.ToString(),
+                            DateOfIssue = cert.NotBefore.ToString(),
                             Thumbprint = cert.Thumbprint,
                             SerialNumber = cert.SerialNumber,
-                            SubjectName = cert.SubjectName.Decode(X500DistinguishedNameFlags.None).Replace("CN=", ""),
+                            SubjectName = cert.Subject,
                             Issuer = cert.Issuer.Replace("CN=", ""),
                             KeyType = new Oid(cert.GetKeyAlgorithm()).FriendlyName ?? "Unknown",
                             Certificate = cert
@@ -592,10 +592,19 @@ namespace PISmartcardClient.ViewModels
                     return;
                 }
             }
-            string subjectName = _PrivacyIDEAService.CurrentUser()!;
+            
+            string? domain = null;
+            try
+            {
+                domain = Environment.UserDomainName;
+            }
+            catch (Exception ex)
+            {
+                Error($"Unable to get domain name: {ex.Message}\n{ex.StackTrace}");
+                _Status = $"Unable to get domain name: {ex.Message}";
+            }
 
-            // TODO REMOVE
-            subjectName += new Random().Next(10000);
+            string subjectName = $"{domain}\\{_PrivacyIDEAService.CurrentUser()!}";
 
             PIVSlot slot = CurrentSlot;
             string algo = "";
@@ -607,7 +616,7 @@ namespace PISmartcardClient.ViewModels
             }
             else
             {
-                (success, string? formAlg) = _WindowService.EnrollmentForm();
+                (success, subjectName, string? formAlg) = _WindowService.EnrollmentForm(subjectName);
                 if (!success)
                 {
                     Log("EnrollmentForm cancelled.");

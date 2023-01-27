@@ -34,6 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Include.wxi" />
+    <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PISmartcardClient\PISmartcardClient.csproj">

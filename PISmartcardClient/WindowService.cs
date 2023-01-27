@@ -56,17 +56,18 @@ namespace PISmartcardClient
             return (true, vm.Input);
         }
 
-        (bool, string?) IWindowService.EnrollmentForm()
+        (bool success, string subjectName, string? algorithm) IWindowService.EnrollmentForm(string subjectName)
         {
             EnrollentForm form = new();
             EnrollmentFormVM formVM = (EnrollmentFormVM)form.DataContext;
+            formVM.SubjectName = subjectName;
             ShowBlockingDialog(form);
             if (formVM.Cancelled)
             {
                 Log("EnrollmentForm cancelled.");
-                return (false, null);
+                return (false, subjectName, null);
             }
-            return (true, formVM.SelectedAlgorithm);
+            return (true, formVM.SubjectName, formVM.SelectedAlgorithm);
         }
 
         (bool success, string? user, string? secondInput) IWindowService.AuthenticationPrompt(string? message, bool showUsernameInput, string? secondInputLabel)

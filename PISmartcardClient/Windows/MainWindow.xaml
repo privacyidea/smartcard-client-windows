@@ -92,12 +92,12 @@
 
         <!-- CENTER INFO GRID -->
         <Grid Grid.Column="1" Name="CenterGrid"
-              VerticalAlignment="Top" HorizontalAlignment="Center" 
-              Height="253" Width="570"
-              Margin="0,150,0,0" Visibility="{Binding ShowCenterGrid, Converter={StaticResource BoolToVis}}">
+              VerticalAlignment="Center" HorizontalAlignment="Left" 
+              Height="253" Width="732"
+              Margin="50,0,0,0" Visibility="{Binding ShowCenterGrid, Converter={StaticResource BoolToVis}}">
 
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
 

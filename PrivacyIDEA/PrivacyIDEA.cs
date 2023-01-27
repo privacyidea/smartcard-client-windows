@@ -125,7 +125,7 @@ namespace PrivacyIDEAClient
             }
         }
 
-        public async Task<PIResponse> CertInit(string user, string csr, string attestation, string description = default,
+        public async Task<PIResponse> CertInit(string user, string csr, string attestation, string ca, string description = default,
             CancellationToken cancellationToken = default)
         {
             if (_HttpClient.DefaultRequestHeaders.Authorization == null)
@@ -138,7 +138,7 @@ namespace PrivacyIDEAClient
             {
                 { "type", "certificate" },
                 { "user", user },
-                { "ca", "ca" },
+                { "ca", ca },
                 { "request", csr },
                 { "attestation", attestation }
             };

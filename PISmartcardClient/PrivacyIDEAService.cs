@@ -207,9 +207,15 @@ namespace PISmartcardClient
             CancellationToken cToken = _WindowService.StartLoadingWindow("Sending the request to privacyIDEA...");
             PIResponse? response = null;
             Exception? exception = null;
+            string? ca = _SettingsService.GetStringProperty("ca");
+            if (ca is null)
+            {
+                Log("No ca configured, abort enrollment");
+                return null;
+            }
             try
             {
-                response = await Task.Run(() => _PrivacyIDEA!.CertInit(_CurrentUsername, csr, attestation, description, cToken));
+                response = await Task.Run(() => _PrivacyIDEA!.CertInit(_CurrentUsername, csr, attestation, ca, description, cToken));
             }
             catch (TaskCanceledException tce)
             {

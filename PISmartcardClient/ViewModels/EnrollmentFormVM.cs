@@ -12,8 +12,15 @@ namespace PISmartcardClient.ViewModels
         private string? _SelectedAlgorithm;
         public string SelectedAlgorithm
         {
-            get => _SelectedAlgorithm ?? "EccP256";
+            get => _SelectedAlgorithm ?? "RSA2048";
             set => SetProperty(ref _SelectedAlgorithm, value);
+        }
+
+        private string? _SubjectName;
+        public string SubjectName
+        {
+            get => _SubjectName ?? "";
+            set => SetProperty(ref _SubjectName, value);
         }
 
         public bool Cancelled { get; set; }

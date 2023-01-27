@@ -6,7 +6,7 @@ namespace PISmartcardClient
     {
         public (bool success, string? input) SimplePrompt(string title, string message, string buttonText);
         public (bool success, string? managementKey) YubikeyMgmtKeyPrompt();
-        public (bool success, string? algorithm) EnrollmentForm();
+        public (bool success, string subjectName, string? algorithm) EnrollmentForm(string subjectName);
         public (bool success, string? user, string? secondInput) AuthenticationPrompt(string? message, bool showUsernameInput, string? secondInputLabel);
         
         // Returns true if the user confirmed, false otherwise
