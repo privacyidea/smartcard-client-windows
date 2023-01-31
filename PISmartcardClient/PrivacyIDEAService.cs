@@ -45,7 +45,7 @@ namespace PISmartcardClient
             }
         }
 
-        async Task<bool> IPrivacyIDEAService.DoUserAuthentication()
+        async Task<bool> IPrivacyIDEAService.UserAuthentication()
         {
             Log("PrivacyIDEA Service: DoUserAuthentication");
             EnsurePISetup();
@@ -56,12 +56,13 @@ namespace PISmartcardClient
             string? message = null;
             string? secondInputLabel = null;
 
-            // completed indicates success for both OTP and push threads. bool get/set operations are atomic by default
+            // Completed indicates success for both OTP and push threads. Bool get/set operations are atomic by default
             bool completed = false;
             string? user = null;
             CancellationTokenSource source = new();
             var pollToken = source.Token;
-
+            // TransactionID has to be persisted through error responses
+            string? transactionID = null;
             while (!completed)
             {
                 // Overwrite defaults if there was a response
@@ -71,6 +72,7 @@ namespace PISmartcardClient
                     message = response.Message;
                     secondInputLabel = "One-Time Password:";
                 }
+
                 (bool success, string? userInput, string? secondInput) = _WindowService.AuthenticationPrompt(message, showUsernameInput, secondInputLabel);
                 if (!success)
                 {
@@ -101,11 +103,6 @@ namespace PISmartcardClient
                         Task? t = null;
                         try
                         {
-                            string? transactionID = null;
-                            if (response is not null)
-                            {
-                                transactionID = response.TransactionID;
-                            }
                             response = await _PrivacyIDEA!.Auth(user, secondInput ?? "", transactionID: transactionID, cancellationToken: cToken ?? default);
 
                             // Check if authentication is successful or if challenges have been triggered
@@ -120,6 +117,7 @@ namespace PISmartcardClient
                             }
                             else if (response.Challenges.Count > 0)
                             {
+                                transactionID = response.TransactionID;
                                 if (response.Challenges.Any(c => c.Type == "push"))
                                 {
                                     // Run the polling for push in separate thread which has to be terminated if the authentication is completed otherwise
@@ -154,6 +152,13 @@ namespace PISmartcardClient
                                         Log("Poll thread terminating");
                                     });
                                 }
+                            }
+                            // The /auth endpoint response is not well defined. It returns an error message even when challenges are triggered.
+                            // So it is only truly an error if the error is present and there were no challenges triggered
+                            else if (!string.IsNullOrEmpty(response.ErrorMessage) && response.Challenges.Count == 0)
+                            {
+                                // Append the error message to the general message which will be displayed in the prompt anyway
+                                response.Message += $"\n{response.ErrorMessage} ({response.ErrorCode})";
                             }
                         }
                         catch (TaskCanceledException)

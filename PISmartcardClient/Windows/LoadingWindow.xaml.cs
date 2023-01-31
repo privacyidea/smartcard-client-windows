@@ -14,6 +14,7 @@ namespace PISmartcardClient.Windows
             InitializeComponent();
             Owner = App.Current.MainWindow;
             DataContext = App.Current.Services.GetService<LoadingVM>();
+            Topmost = true;
         }
     }
 }

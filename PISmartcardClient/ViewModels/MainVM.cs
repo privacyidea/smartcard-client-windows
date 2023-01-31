@@ -16,6 +16,7 @@ using System.ComponentModel;
 using System.Net.Http;
 using System.Management;
 using System.Diagnostics;
+using System.Threading;
 
 namespace PISmartcardClient.ViewModels
 {
@@ -423,7 +424,7 @@ namespace PISmartcardClient.ViewModels
                     bool authenticated = false;
                     try
                     {
-                        authenticated = await _PrivacyIDEAService.DoUserAuthentication();
+                        authenticated = await _PrivacyIDEAService.UserAuthentication();
                     }
                     catch (HttpRequestException e)
                     {
@@ -592,7 +593,7 @@ namespace PISmartcardClient.ViewModels
                     return;
                 }
             }
-            
+
             string? domain = null;
             try
             {
