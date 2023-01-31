@@ -120,6 +120,7 @@ namespace YubiKeyPIV
             PivPublicKey? publicKey = null;
             try
             {
+                // TODO PIN policies
                 publicKey = _Session!.GenerateKeyPair(pivSlot, pivAlgorithm);
             }
             catch (ArgumentException arge)

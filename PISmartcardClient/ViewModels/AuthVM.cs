@@ -39,13 +39,24 @@ namespace PISmartcardClient.ViewModels
             set => SetProperty(ref _PasswordLabel, value);
         }
 
-        public bool ShowUsernameInput { get; set; } = true;
+        private bool _ShowUsernameInput = true;
+        public bool ShowUsernameInput
+        {
+            get => _ShowUsernameInput;
+            set
+            {
+                UsernameInputVisibilityChanged?.Invoke(value);
+                _ShowUsernameInput = value;
+            }
+        }
 
         public bool Cancelled { get; set; }
 
         public RelayCommand<Window> OK { get; set; }
         public RelayCommand<Window> Cancel { get; set; }
         public Func<string?>? PasswordGetter { get; set; }
+
+        public Action<bool>? UsernameInputVisibilityChanged { get; set; }
 
         public AuthVM()
         {

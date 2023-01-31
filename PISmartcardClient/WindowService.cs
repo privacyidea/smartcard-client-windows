@@ -72,7 +72,7 @@ namespace PISmartcardClient
 
         (bool success, string? user, string? secondInput) IWindowService.AuthenticationPrompt(string? message, bool showUsernameInput, string? secondInputLabel)
         {
-            AuthInputWindow authWindow = new();
+            AuthWindow authWindow = new();
             AuthVM authVM = (AuthVM)authWindow.DataContext;
 
             if (!string.IsNullOrEmpty(message))

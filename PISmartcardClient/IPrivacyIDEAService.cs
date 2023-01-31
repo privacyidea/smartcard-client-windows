@@ -7,7 +7,7 @@ namespace PISmartcardClient
 {
     public interface IPrivacyIDEAService : IDisposable
     {
-        public Task<bool> DoUserAuthentication();
+        public Task<bool> UserAuthentication();
         public Task<PIResponse?> SendCSR(string csr, string attestation, string? description = default);
         public string? CurrentUser();
         public void Logout();

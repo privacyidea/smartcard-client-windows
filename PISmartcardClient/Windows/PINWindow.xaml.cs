@@ -20,6 +20,7 @@ namespace PISmartcardClient.Windows
                 DataContext = vm;
                 vm.PinGetter = () => (PWB1.Password, PWB2.Password);
             }
+            Topmost = true;
         }
     }
 }
