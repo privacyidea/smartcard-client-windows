@@ -47,6 +47,7 @@
 			<ComponentRef Id="ApplicationShortcutDesktop"/>
 		</Feature>
 
+		<!-- PROPERTIES -->
 		<Property Id="URL">
 			<RegistrySearch Id="SearchURL" Root="HKLM" Key="SOFTWARE\$(var.Publisher)\$(var.ProductName)"
 							Name="url" Win64="yes" Type="raw"/>
@@ -59,7 +60,11 @@
 			<RegistrySearch Id="SearchDebugLog" Root="HKLM" Key="SOFTWARE\$(var.Publisher)\$(var.ProductName)"
 							Name="debug_log" Win64="yes" Type="raw"/>
 		</Property>
-
+		<Property Id="CA">
+			<RegistrySearch Id="SearchCA" Root="HKLM" Key="SOFTWARE\$(var.Publisher)\$(var.ProductName)"
+							Name="ca" Win64="yes" Type="raw"/>
+		</Property>
+		
 		<!-- Set Logos and License -->
 		<WixVariable Id="WixUIDialogBmp" Value="$(var.ProjectDir)\Assets\Dialog.bmp"/>
 		<WixVariable Id="WixUIBannerBmp" Value="$(var.ProjectDir)\Assets\Banner.bmp"/>
@@ -140,6 +145,7 @@
 					<RegistryValue Name='url'                Type='string' Value='[URL]'/>
 					<RegistryValue Name='disable_ssl'        Type='string' Value='[DISABLESSL]'/>
 					<RegistryValue Name='debug_log'          Type='string' Value='[DEBUGLOG]'/>
+					<RegistryValue Name='ca'				 Type='string' Value='[CA]'/>
 				</RegistryKey>
 			</Component>
 		</ComponentGroup>
