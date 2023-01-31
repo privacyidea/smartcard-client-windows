@@ -609,7 +609,6 @@ namespace PISmartcardClient.ViewModels
 
             PIVSlot slot = CurrentSlot;
             string algo = "";
-            bool success = false;
             if (_SettingsService.GetStringProperty("algorithm") is string settingsAlg)
             {
                 Log($"Using fixed algorithm from settings: {settingsAlg}");
@@ -617,7 +616,7 @@ namespace PISmartcardClient.ViewModels
             }
             else
             {
-                (success, subjectName, string? formAlg) = _WindowService.EnrollmentForm(subjectName);
+                (bool success, subjectName, string? formAlg) = _WindowService.EnrollmentForm(subjectName);
                 if (!success)
                 {
                     Log("EnrollmentForm cancelled.");
@@ -684,7 +683,7 @@ namespace PISmartcardClient.ViewModels
                         X509Certificate2? cert = CertUtil.ExtractCertificateFromResponse(certStr);
                         if (cert is not null)
                         {
-                            success = CurrentDevice.ImportCertificate(slot, cert);
+                            bool success = CurrentDevice.ImportCertificate(slot, cert);
                             if (success)
                             {
                                 Log("Import successful!");

@@ -51,10 +51,10 @@ namespace Tests
         [TestMethod]
         public void TestUserAuthentication()
         {
-            _WindowServiceMock.Setup(m => m.AuthenticationPrompt()).Returns((true, _Username, _Password));
+            _WindowServiceMock.Setup(m => m.AuthenticationPrompt(null, true, null)).Returns((true, _Username, _Password));
             PrepAuthResponse();
 
-            var task = _PrivacyIDEAService.DoUserAuthentication();
+            var task = _PrivacyIDEAService.UserAuthentication();
             bool res = task.GetAwaiter().GetResult();
 
             res.Should().BeTrue();

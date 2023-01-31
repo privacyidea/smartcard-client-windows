@@ -47,7 +47,7 @@ namespace PISmartcardClient
 
         async Task<bool> IPrivacyIDEAService.UserAuthentication()
         {
-            Log("PrivacyIDEA Service: DoUserAuthentication");
+            Log("PrivacyIDEA Service: UserAuthentication");
             EnsurePISetup();
 
             // Default values to start with

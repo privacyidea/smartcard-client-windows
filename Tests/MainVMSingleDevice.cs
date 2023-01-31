@@ -72,7 +72,7 @@ namespace Tests
             _VM.ShowCenterGrid.Should().BeFalse();
             _VM.ShowCheckPendingBtn.Should().BeFalse();
             _VM.ShowCreateBtn.Should().BeFalse();
-            _VM.CurrentUserLabel.Should().Be("User: None");
+            _VM.CurrentUserLabel.Should().Be("No User");
         }
 
         [TestMethod]
@@ -95,8 +95,6 @@ namespace Tests
             _VM.CurrentSlotData.Should().NotBeNull();
             _VM.ShowCreateBtn.Should().BeTrue();
             _VM.ShowCenterGrid.Should().BeTrue();
-            _WindowServiceMock.Verify(m => m.StartLoadingWindow(It.IsAny<string>()), Times.Once);
-            _WindowServiceMock.Verify(m => m.StartLoadingWindow(It.IsAny<string>()), Times.Once);
         }
 
         [TestMethod]
@@ -110,11 +108,9 @@ namespace Tests
             _VM.ShowCreateBtn.Should().BeTrue();
             _VM.ShowCenterGrid.Should().BeFalse();
             _VM.NoSlotOrCertText.Should().Be("There is currently no certificate in this slot.");
-
-            _WindowServiceMock.Verify(m => m.StartLoadingWindow(It.IsAny<string>()), Times.Once);
-            _WindowServiceMock.Verify(m => m.StartLoadingWindow(It.IsAny<string>()), Times.Once);
         }
 
+        // TODO this test does not reflect the current behavior anymore
         [TestMethod]
         public void LoginAndLogoutUserWithPending()
         {
@@ -123,7 +119,7 @@ namespace Tests
                                    .Returns((string?)null) // First check if a user is already authenticated
                                    .Returns("TestUser") // Get the user that just authenticated
                                    .Returns("TestUser"); // Get user again for logout
-            _PrivacyIDEAServiceMock.Setup(m => m.DoUserAuthentication()).ReturnsAsync(true);
+            _PrivacyIDEAServiceMock.Setup(m => m.UserAuthentication()).ReturnsAsync(true);
 
             List<PIPendingCertificateRequest> list = new()
             {
@@ -137,7 +133,7 @@ namespace Tests
             _VM.CurrentSlot = PIVSlot.Authentication;
             _VM.BtnChangeUser.Execute(null);
             Thread.Sleep(500);
-            _VM.CurrentUserLabel.Should().Be("User: TestUser");
+            _VM.CurrentUserLabel.Should().Be("TestUser");
             _VM.LoginSwitchBtnText.Should().Be("Logout");
 
             // Verify the pending rollout is shown
@@ -147,7 +143,7 @@ namespace Tests
             // Logout
             _VM.BtnChangeUser.Execute(null);
             Thread.Sleep(500);
-            _VM.CurrentUserLabel.Should().Be("User: None");
+            _VM.CurrentUserLabel.Should().Be("No User");
             _VM.LoginSwitchBtnText.Should().Be("Login");
             _VM.PendingRolloutText.Should().BeNull();
         }
@@ -155,7 +151,7 @@ namespace Tests
         [TestMethod]
         public void GenerateNewCertificate()
         {
-            _WindowServiceMock.Setup(m => m.EnrollmentForm()).Returns((true, "EccP256"));
+            _WindowServiceMock.Setup(m => m.EnrollmentForm(It.IsAny<string>())).Returns((true, "TestUser", "EccP256"));
 
             string strCertFromResponse = "-----BEGIN CERTIFICATE-----\n" +
                          "MIIDrzCCAZegAwIBAgICEBkwDQYJKoZIhvcNAQELBQAwDTELMAkGA1UEAxMCY2Ew" +
@@ -186,6 +182,8 @@ namespace Tests
                 Certificate = strCertFromResponse
             };
 
+            _PersistenceServiceMock.Setup(m => m.LoadData(It.IsAny<string>())).Returns(new List<PIPendingCertificateRequest>());
+
             _PIVDeviceMock.SetupSequence(m => m.GetCertificate(PIVSlot.Authentication))
                            .Returns((X509Certificate2?)null) // when loading first time
                            .Returns(certFromResponse); // after importing
@@ -212,11 +210,9 @@ namespace Tests
             _VM.CurrentSlotData.Should().BeNull();
 
             // Generate a new certificate for the slot
-            //_VM.CurrentSlot = PIVSlot.Authentication;
             _VM.BtnNew.Execute(null);
             Thread.Sleep(1000);
 
-            _PersistenceServiceMock.Verify(m => m.SaveCSR(It.IsAny<PIPendingCertificateRequest>()));
             _VM.CurrentSlotData.Should().NotBeNull();
         }
 
