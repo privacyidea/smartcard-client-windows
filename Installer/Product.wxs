@@ -5,7 +5,7 @@
 	<?include $(sys.CURRENTDIR)\Include.wxi?>
 
 	<Product Id="{3E683257-80A6-457E-94A5-574B8F8167D9}"
-			 Name="PrivacyIDEA Smartcard Client"
+			 Name="PrivacyIDEA Smartcard Client $(var.Version)"
 			 Language="1033"
 			 Version="1.0.0.0"
 			 Manufacturer="$(var.Publisher)"
