@@ -3,3 +3,6 @@ This client is used to enroll certificates on PIV ([FIPS 201](https://www.nist.g
 
 ### Currently supported devices
 * Yubikeys with PIV functionality
+
+### Prerequisites
+The Smartcard Client requires .NET 6 and the C++ Redistributables to run.
