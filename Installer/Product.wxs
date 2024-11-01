@@ -4,10 +4,10 @@
 
 	<?include $(sys.CURRENTDIR)\Include.wxi?>
 
-	<Product Id="{3E683257-80A6-457E-94A5-574B8F8167D9}"
+	<Product Id="*"
 			 Name="PrivacyIDEA Smartcard Client $(var.Version)"
 			 Language="1033"
-			 Version="1.0.0.0"
+			 Version="1.0.1.0"
 			 Manufacturer="$(var.Publisher)"
 			 UpgradeCode="358f0de4-b7c9-4b7d-b4ea-3c956505c168">
 

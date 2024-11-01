@@ -18,8 +18,8 @@
 		<Authors>NetKnights GmbH</Authors>
 		<Product>PrivacyIDEA Smartcard Client</Product>
 		<PackageProjectUrl>https://github.com/privacyidea/smartcard-client-windows</PackageProjectUrl>
-		<AssemblyVersion>1.0.0</AssemblyVersion>
-		<FileVersion>1.0.0</FileVersion>
+		<AssemblyVersion>1.0.1</AssemblyVersion>
+		<FileVersion>1.0.1</FileVersion>
 		<PlatformTarget>x64</PlatformTarget>
 		<BaseOutputPath></BaseOutputPath>
 	</PropertyGroup>
@@ -31,10 +31,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="LoadingSpinner.WPF" Version="1.0.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Toolkit.Mvvm" Version="7.1.2" />
-		<PackageReference Include="System.Management" Version="6.0.0" />
-		<PackageReference Include="Yubico.YubiKey" Version="1.4.2" />
+		<PackageReference Include="System.Management" Version="8.0.0" />
+		<PackageReference Include="Yubico.YubiKey" Version="1.11.0" />
 	</ItemGroup>
 
 	<ItemGroup>

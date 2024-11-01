@@ -41,6 +41,12 @@
             <Component Id="cmp38C8C8720B9E206E84300D54623F364F" Guid="*">
                 <File Id="fil4F23AD8C96C5BB4CBC95EDCEBFEAE01A" KeyPath="yes" Source="$(var.HarvestPath)\PrivacyIDEA Client.dll" />
             </Component>
+            <Component Id="cmp627F95934DFE8795F8708045A2120F23" Guid="*">
+                <File Id="filAEAF8C61AA86723A95F0986173532954" KeyPath="yes" Source="$(var.HarvestPath)\System.CodeDom.dll" />
+            </Component>
+            <Component Id="cmp818DD9321384D39D5217A67E2E7BCE5F" Guid="*">
+                <File Id="filFE8AF657E5AB8F90D19F7FE38C683891" KeyPath="yes" Source="$(var.HarvestPath)\System.Formats.Cbor.dll" />
+            </Component>
             <Component Id="cmpB2F9EBAF385E9E29B5A93F58B0D73177" Guid="*">
                 <File Id="filA39AFD83E426A11FDBCFCA1B11CFEE01" KeyPath="yes" Source="$(var.HarvestPath)\System.Management.dll" />
             </Component>
@@ -76,6 +82,8 @@
             <ComponentRef Id="cmpDB5150719259774F3E2C981C4744D48F" />
             <ComponentRef Id="cmp0C69636E7BBE1AD1B5B6D6783F3C6DAE" />
             <ComponentRef Id="cmp38C8C8720B9E206E84300D54623F364F" />
+            <ComponentRef Id="cmp627F95934DFE8795F8708045A2120F23" />
+            <ComponentRef Id="cmp818DD9321384D39D5217A67E2E7BCE5F" />
             <ComponentRef Id="cmpB2F9EBAF385E9E29B5A93F58B0D73177" />
             <ComponentRef Id="cmpCC819D78638D2AE9194EF1CACA4D1678" />
             <ComponentRef Id="cmp5FF7899E92EDB8FCC6B405FE4CA1E01C" />
